@@ -708,6 +708,71 @@ public class SipServiceCommand implements SipServiceConstants {
     }
 
     /**
+     * Start recording one active call to a WAV file. The path is created by the client app and
+     * must point to app-owned storage.
+     */
+    public static void startCallRecording(Context context, String accountID, int callID, String filePath) {
+        checkAccount(accountID);
+        if (filePath == null || filePath.trim().isEmpty()) {
+            throw new IllegalArgumentException("filePath MUST not be empty!");
+        }
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_START_CALL_RECORDING);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_CALL_ID, callID);
+        intent.putExtra(PARAM_RECORDING_PATH, filePath);
+        context.startService(intent);
+    }
+
+    public static void stopCallRecording(Context context, String accountID, int callID) {
+        checkAccount(accountID);
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_STOP_CALL_RECORDING);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_CALL_ID, callID);
+        context.startService(intent);
+    }
+
+    /**
+     * Locally bridge two established calls into one full-duplex conference.
+     */
+    public static void connectConference(
+            Context context,
+            String accountID,
+            int callID,
+            String peerAccountID,
+            int peerCallID
+    ) {
+        checkAccount(accountID);
+        checkAccount(peerAccountID);
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_CONNECT_CONFERENCE);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_CALL_ID, callID);
+        intent.putExtra(PARAM_PEER_ACCOUNT_ID, peerAccountID);
+        intent.putExtra(PARAM_PEER_CALL_ID, peerCallID);
+        context.startService(intent);
+    }
+
+    public static void disconnectConference(
+            Context context,
+            String accountID,
+            int callID,
+            String peerAccountID,
+            int peerCallID
+    ) {
+        checkAccount(accountID);
+        checkAccount(peerAccountID);
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_DISCONNECT_CONFERENCE);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_CALL_ID, callID);
+        intent.putExtra(PARAM_PEER_ACCOUNT_ID, peerAccountID);
+        intent.putExtra(PARAM_PEER_CALL_ID, peerCallID);
+        context.startService(intent);
+    }
+
+    /**
      * Sets the camera manager within the PjCamera2Info class
      * it is used to enumerate the video devices without the CAMERA permission
      * @param cm CameraManager retrieved with {@link Context#getSystemService(String)}}

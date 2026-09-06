@@ -105,6 +105,23 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
 
         } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.VOICEMAIL_WAITING).equals(action)) {
             onVoicemailWaiting(intent.getParcelableExtra(PARAM_VOICEMAIL_STATUS));
+
+        } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.RECORDING_STATE).equals(action)) {
+            onRecordingState(
+                    intent.getStringExtra(PARAM_ACCOUNT_ID),
+                    intent.getIntExtra(PARAM_CALL_ID, -1),
+                    intent.getBooleanExtra(PARAM_FEATURE_ENABLED, false),
+                    intent.getStringExtra(PARAM_RECORDING_PATH),
+                    intent.getStringExtra(PARAM_ERROR_MESSAGE));
+
+        } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.CONFERENCE_STATE).equals(action)) {
+            onConferenceState(
+                    intent.getStringExtra(PARAM_ACCOUNT_ID),
+                    intent.getIntExtra(PARAM_CALL_ID, -1),
+                    intent.getStringExtra(PARAM_PEER_ACCOUNT_ID),
+                    intent.getIntExtra(PARAM_PEER_CALL_ID, -1),
+                    intent.getBooleanExtra(PARAM_FEATURE_ENABLED, false),
+                    intent.getStringExtra(PARAM_ERROR_MESSAGE));
         }
     }
 
@@ -152,6 +169,10 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
                 BroadcastEventEmitter.BroadcastAction.NOTIFY_TLS_VERIFY_STATUS_FAILED));
         intentFilter.addAction(BroadcastEventEmitter.getAction(
                 BroadcastEventEmitter.BroadcastAction.VOICEMAIL_WAITING));
+        intentFilter.addAction(BroadcastEventEmitter.getAction(
+                BroadcastEventEmitter.BroadcastAction.RECORDING_STATE));
+        intentFilter.addAction(BroadcastEventEmitter.getAction(
+                BroadcastEventEmitter.BroadcastAction.CONFERENCE_STATE));
         if (Build.VERSION.SDK_INT >= 34) {
             context.registerReceiver( this, intentFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {
@@ -267,4 +288,26 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
     protected void onVoicemailWaiting(VoicemailStatus status) {
         Logger.debug(LOG_TAG, "onVoicemailWaiting - " + status);
     }
+    protected void onRecordingState(
+            String accountID,
+            int callID,
+            boolean recording,
+            String filePath,
+            String error
+    ) {
+        Logger.debug(LOG_TAG, "onRecordingState - callID: " + callID + ", recording: " + recording);
+    }
+
+    protected void onConferenceState(
+            String accountID,
+            int callID,
+            String peerAccountID,
+            int peerCallID,
+            boolean connected,
+            String error
+    ) {
+        Logger.debug(LOG_TAG, "onConferenceState - callID: " + callID +
+                ", peerCallID: " + peerCallID + ", connected: " + connected);
+    }
+
 }

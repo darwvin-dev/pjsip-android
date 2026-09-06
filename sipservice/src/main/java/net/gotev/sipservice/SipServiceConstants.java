@@ -36,6 +36,10 @@ public interface SipServiceConstants {
     String ACTION_MAKE_DIRECT_CALL = "makeDirectCall";
     String ACTION_RECONNECT_CALL = "reconnectCall";
     String ACTION_MAKE_SILENT_CALL = "makeSilentCall";
+    String ACTION_START_CALL_RECORDING = "startCallRecording";
+    String ACTION_STOP_CALL_RECORDING = "stopCallRecording";
+    String ACTION_CONNECT_CONFERENCE = "connectConference";
+    String ACTION_DISCONNECT_CONFERENCE = "disconnectConference";
 
     /*
      * Generic Parameters
@@ -65,6 +69,11 @@ public interface SipServiceConstants {
     String PARAM_DIRECT_CALL_TRANSPORT = "directTransport";
     String PARAM_IS_TRANSFER = "isTransfer";
     String PARAM_HANGUP_STATUS = "hangupStatus";
+    String PARAM_RECORDING_PATH = "recordingPath";
+    String PARAM_PEER_ACCOUNT_ID = "peerAccountID";
+    String PARAM_PEER_CALL_ID = "peerCallId";
+    String PARAM_FEATURE_ENABLED = "featureEnabled";
+    String PARAM_ERROR_MESSAGE = "errorMessage";
 
     /**
      * Specific Parameters passed in the broadcast intents.

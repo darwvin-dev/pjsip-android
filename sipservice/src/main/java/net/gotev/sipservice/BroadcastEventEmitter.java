@@ -240,11 +240,17 @@ public class BroadcastEventEmitter implements SipServiceConstants {
      *
      * @param status the parsed voice-message counts
      */
-    void voicemailWaiting(VoicemailStatus status) {
+    void voicemailWaiting(String accountID, VoicemailStatus status) {
         final Intent intent = new Intent();
         intent.setAction(getAction(BroadcastAction.VOICEMAIL_WAITING));
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
         intent.putExtra(PARAM_VOICEMAIL_STATUS, status);
         sendBroadcast(intent);
+    }
+
+    /** Backward-compatible helper for clients that do not need the account identity. */
+    void voicemailWaiting(VoicemailStatus status) {
+        voicemailWaiting(null, status);
     }
 
 

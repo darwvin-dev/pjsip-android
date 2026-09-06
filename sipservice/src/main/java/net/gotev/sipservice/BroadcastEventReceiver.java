@@ -104,7 +104,9 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
             onTlsVerifyStatusFailed();
 
         } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.VOICEMAIL_WAITING).equals(action)) {
-            onVoicemailWaiting(intent.getParcelableExtra(PARAM_VOICEMAIL_STATUS));
+            onVoicemailWaiting(
+                    intent.getStringExtra(PARAM_ACCOUNT_ID),
+                    intent.getParcelableExtra(PARAM_VOICEMAIL_STATUS));
 
         } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.RECORDING_STATE).equals(action)) {
             onRecordingState(
@@ -306,6 +308,10 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
     /**
      * Unsolicited MWI NOTIFY received: [status] carries the parsed voice-message counts.
      */
+    protected void onVoicemailWaiting(String accountID, VoicemailStatus status) {
+        onVoicemailWaiting(status);
+    }
+
     protected void onVoicemailWaiting(VoicemailStatus status) {
         Logger.debug(LOG_TAG, "onVoicemailWaiting - " + status);
     }

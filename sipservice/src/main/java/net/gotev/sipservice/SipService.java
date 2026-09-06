@@ -169,6 +169,12 @@ public class SipService extends BackgroundService implements SipServiceConstants
                 case ACTION_UNSUBSCRIBE_BUDDY:
                     handleUnsubscribeBuddy(intent);
                     break;
+                case ACTION_SEND_INSTANT_MESSAGE:
+                    handleSendInstantMessage(intent);
+                    break;
+                case ACTION_SEND_TYPING:
+                    handleSendTyping(intent);
+                    break;
                 case ACTION_GET_CODEC_PRIORITIES:
                     handleGetCodecPriorities();
                     break;
@@ -630,6 +636,61 @@ public class SipService extends BackgroundService implements SipServiceConstants
             buddy.stopSubscription();
         }
         mActiveBuddies.clear();
+    }
+
+    private SipBuddy getOrCreateMessagingBuddy(
+            String accountID,
+            SipAccount account,
+            String requestedUri
+    ) throws Exception {
+        String uri = normalizeBuddyUri(account, requestedUri);
+        String key = accountID + "\n" + uri + "\nmessage";
+        SipBuddy buddy = mActiveBuddies.get(key);
+        if (buddy != null) return buddy;
+
+        buddy = new SipBuddy(account, uri, false);
+        buddy.startMessaging();
+        mActiveBuddies.put(key, buddy);
+        return buddy;
+    }
+
+    private void handleSendInstantMessage(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        String requestedUri = intent.getStringExtra(PARAM_BUDDY_URI);
+        String body = intent.getStringExtra(PARAM_MESSAGE_BODY);
+        String contentType = intent.getStringExtra(PARAM_MESSAGE_CONTENT_TYPE);
+        SipAccount account = mActiveSipAccounts.get(accountID);
+        if (account == null || requestedUri == null || requestedUri.trim().isEmpty()) return;
+
+        try {
+            getOrCreateMessagingBuddy(accountID, account, requestedUri.trim())
+                    .sendMessage(body, contentType);
+        } catch (Exception error) {
+            Logger.error(TAG, "Unable to send SIP MESSAGE", error);
+            mBroadcastEmitter.instantMessageStatus(
+                    accountID,
+                    requestedUri,
+                    body,
+                    0,
+                    error.getMessage() == null
+                            ? error.getClass().getSimpleName()
+                            : error.getMessage());
+        }
+    }
+
+    private void handleSendTyping(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        String requestedUri = intent.getStringExtra(PARAM_BUDDY_URI);
+        boolean typing = intent.getBooleanExtra(PARAM_IS_TYPING, false);
+        SipAccount account = mActiveSipAccounts.get(accountID);
+        if (account == null || requestedUri == null || requestedUri.trim().isEmpty()) return;
+
+        try {
+            getOrCreateMessagingBuddy(accountID, account, requestedUri.trim())
+                    .sendTyping(typing);
+        } catch (Exception error) {
+            Logger.error(TAG, "Unable to send SIP typing indication", error);
+        }
     }
 
     private void handleSetIncomingVideoFeed(Intent intent) {

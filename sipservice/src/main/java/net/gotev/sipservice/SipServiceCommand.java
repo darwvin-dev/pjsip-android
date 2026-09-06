@@ -773,6 +773,42 @@ public class SipServiceCommand implements SipServiceConstants {
     }
 
     /**
+     * Subscribe to presence or RFC 4235 dialog events (BLF) for a SIP URI.
+     */
+    public static void subscribeBuddy(
+            Context context,
+            String accountID,
+            String buddyUri,
+            boolean dialogEvent
+    ) {
+        checkAccount(accountID);
+        if (buddyUri == null || buddyUri.trim().isEmpty()) {
+            throw new IllegalArgumentException("buddyUri MUST not be empty!");
+        }
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_SUBSCRIBE_BUDDY);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_BUDDY_URI, buddyUri.trim());
+        intent.putExtra(PARAM_BUDDY_DIALOG_EVENT, dialogEvent);
+        context.startService(intent);
+    }
+
+    public static void unsubscribeBuddy(
+            Context context,
+            String accountID,
+            String buddyUri,
+            boolean dialogEvent
+    ) {
+        checkAccount(accountID);
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_UNSUBSCRIBE_BUDDY);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_BUDDY_URI, buddyUri == null ? "" : buddyUri.trim());
+        intent.putExtra(PARAM_BUDDY_DIALOG_EVENT, dialogEvent);
+        context.startService(intent);
+    }
+
+    /**
      * Sets the camera manager within the PjCamera2Info class
      * it is used to enumerate the video devices without the CAMERA permission
      * @param cm CameraManager retrieved with {@link Context#getSystemService(String)}}

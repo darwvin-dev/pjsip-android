@@ -27,18 +27,32 @@ public class SipEndpoint extends Endpoint {
         if (service.getSharedPreferencesHelper().isVerifySipServerCert() &&
                 prm.getType().equalsIgnoreCase("TLS")
         ) {
-            long verifyMsg = prm.getTlsInfo().getVerifyStatus();
-            int binSuccessMsg = pj_ssl_cert_verify_flag_t.PJ_SSL_CERT_ESUCCESS;
-            int binIdentityNotMatchMsg = pj_ssl_cert_verify_flag_t.PJ_SSL_CERT_EIDENTITY_NOT_MATCH;
-            boolean isSuccess = verifyMsg == binSuccessMsg;
-            boolean isIdentityMismatch = verifyMsg == binIdentityNotMatchMsg;
-            String host = SipService.getActiveSipAccounts().elements().nextElement().getData().getHost();
-            if (!(isSuccess || (isIdentityMismatch && SipTlsUtils.isWildcardValid(getCertNames(prm), host)))) {
-                Logger.error(TAG, "The Sip Certificate is not valid");
+            long verifyStatus = prm.getTlsInfo().getVerifyStatus();
+            int success = pj_ssl_cert_verify_flag_t.PJ_SSL_CERT_ESUCCESS;
+            int identityMismatch = pj_ssl_cert_verify_flag_t.PJ_SSL_CERT_EIDENTITY_NOT_MATCH;
+
+            boolean verified = verifyStatus == success;
+            if (verifyStatus == identityMismatch) {
+                // Older PJSIP/OpenSSL combinations can report an identity mismatch for a valid
+                // single-label wildcard. Only allow that one isolated error, and only after the
+                // native chain verification has produced no other failure bits.
+                ArrayList<String> certNames = getCertNames(prm);
+                for (SipAccount account : SipService.getActiveSipAccounts().values()) {
+                    String host = account.getData().getHost();
+                    if (host != null && SipTlsUtils.isWildcardValid(certNames, host)) {
+                        verified = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!verified) {
+                Logger.error(TAG, "SIP TLS peer verification failed with status " + verifyStatus);
                 service.getBroadcastEmitter().notifyTlsVerifyStatusFailed();
+                // Fail closed. Do not keep a registration or call alive on an untrusted transport.
                 service.stopSelf();
             } else {
-                Logger.info(TAG, "The Sip Certificate verification succeeded");
+                Logger.info(TAG, "SIP TLS peer verification succeeded");
             }
         }
     }

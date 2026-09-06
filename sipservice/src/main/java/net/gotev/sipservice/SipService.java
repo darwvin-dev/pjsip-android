@@ -876,8 +876,20 @@ public class SipService extends BackgroundService implements SipServiceConstants
                     sipAccount.getData().setContactUriParams(regContactParams);
                     refresh = false;
                     mActiveSipAccounts.put(accountID, sipAccount);
-                    mConfiguredAccounts.clear();
-                    mConfiguredAccounts.add(sipAccount.getData());
+                    // Update only this account's persisted contact parameters. Clearing the
+                    // complete list here breaks multi-account registration whenever an RFC8599
+                    // push token is refreshed for one account.
+                    boolean replaced = false;
+                    for (int i = 0; i < mConfiguredAccounts.size(); i++) {
+                        if (mConfiguredAccounts.get(i).getIdUri().equals(accountID)) {
+                            mConfiguredAccounts.set(i, sipAccount.getData());
+                            replaced = true;
+                            break;
+                        }
+                    }
+                    if (!replaced) {
+                        mConfiguredAccounts.add(sipAccount.getData());
+                    }
                     persistConfiguredAccounts();
                 }
                 if (refresh) {

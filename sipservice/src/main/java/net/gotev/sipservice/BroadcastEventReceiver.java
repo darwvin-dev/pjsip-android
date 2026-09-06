@@ -141,6 +141,28 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
                     intent.getStringExtra(PARAM_ACCOUNT_ID),
                     intent.getStringExtra(PARAM_BUDDY_URI),
                     intent.getStringExtra(PARAM_BLF_STATE));
+
+        } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.INSTANT_MESSAGE_RECEIVED).equals(action)) {
+            onInstantMessageReceived(
+                    intent.getStringExtra(PARAM_ACCOUNT_ID),
+                    intent.getStringExtra(PARAM_MESSAGE_FROM_URI),
+                    intent.getStringExtra(PARAM_MESSAGE_TO_URI),
+                    intent.getStringExtra(PARAM_MESSAGE_CONTENT_TYPE),
+                    intent.getStringExtra(PARAM_MESSAGE_BODY));
+
+        } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.INSTANT_MESSAGE_STATUS).equals(action)) {
+            onInstantMessageStatus(
+                    intent.getStringExtra(PARAM_ACCOUNT_ID),
+                    intent.getStringExtra(PARAM_MESSAGE_TO_URI),
+                    intent.getStringExtra(PARAM_MESSAGE_BODY),
+                    intent.getIntExtra(PARAM_MESSAGE_STATUS_CODE, 0),
+                    intent.getStringExtra(PARAM_MESSAGE_REASON));
+
+        } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.TYPING_INDICATION).equals(action)) {
+            onTypingIndication(
+                    intent.getStringExtra(PARAM_ACCOUNT_ID),
+                    intent.getStringExtra(PARAM_MESSAGE_FROM_URI),
+                    intent.getBooleanExtra(PARAM_IS_TYPING, false));
         }
     }
 
@@ -196,6 +218,12 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
                 BroadcastEventEmitter.BroadcastAction.PRESENCE_STATE));
         intentFilter.addAction(BroadcastEventEmitter.getAction(
                 BroadcastEventEmitter.BroadcastAction.BLF_STATE));
+        intentFilter.addAction(BroadcastEventEmitter.getAction(
+                BroadcastEventEmitter.BroadcastAction.INSTANT_MESSAGE_RECEIVED));
+        intentFilter.addAction(BroadcastEventEmitter.getAction(
+                BroadcastEventEmitter.BroadcastAction.INSTANT_MESSAGE_STATUS));
+        intentFilter.addAction(BroadcastEventEmitter.getAction(
+                BroadcastEventEmitter.BroadcastAction.TYPING_INDICATION));
         if (Build.VERSION.SDK_INT >= 34) {
             context.registerReceiver( this, intentFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {
@@ -353,6 +381,30 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
 
     protected void onBlfState(String accountID, String buddyUri, String state) {
         Logger.debug(LOG_TAG, "onBlfState - state: " + state);
+    }
+
+    protected void onInstantMessageReceived(
+            String accountID,
+            String fromUri,
+            String toUri,
+            String contentType,
+            String body
+    ) {
+        Logger.debug(LOG_TAG, "Incoming SIP MESSAGE received");
+    }
+
+    protected void onInstantMessageStatus(
+            String accountID,
+            String toUri,
+            String body,
+            int code,
+            String reason
+    ) {
+        Logger.debug(LOG_TAG, "SIP MESSAGE status: " + code);
+    }
+
+    protected void onTypingIndication(String accountID, String fromUri, boolean typing) {
+        Logger.debug(LOG_TAG, "SIP typing indication: " + typing);
     }
 
 }

@@ -58,6 +58,7 @@ public interface SipServiceConstants {
     // instead of the AOR (xferReplaces).
     String PARAM_USE_CONTACT_URI = "useContactUri";
     String PARAM_DTMF = "dtmf";
+    String PARAM_DTMF_METHOD = "dtmfMethod";
     String PARAM_HOLD = "hold";
     String PARAM_MUTE = "mute";
     String PARAM_CODEC_PRIORITIES = "codecPriorities";

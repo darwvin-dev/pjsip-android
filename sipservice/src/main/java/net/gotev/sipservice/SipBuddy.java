@@ -9,6 +9,8 @@ import org.pjsip.pjsua2.RxMsgEvent;
 import org.pjsip.pjsua2.SipEvent;
 import org.pjsip.pjsua2.SipEventBody;
 import org.pjsip.pjsua2.SipRxData;
+import org.pjsip.pjsua2.SendInstantMessageParam;
+import org.pjsip.pjsua2.SendTypingIndicationParam;
 import org.pjsip.pjsua2.pjsua_buddy_status;
 
 import java.util.Locale;
@@ -57,6 +59,42 @@ final class SipBuddy extends Buddy {
             updateDlgEvent();
         } else {
             updatePresence();
+        }
+    }
+
+    void startMessaging() throws Exception {
+        BuddyConfig config = new BuddyConfig();
+        try {
+            config.setUri(uri);
+            config.setSubscribe(false);
+            config.setSubscribe_dlg_event(false);
+            create(account, config);
+        } finally {
+            config.delete();
+        }
+    }
+
+    void sendMessage(String content, String contentType) throws Exception {
+        SendInstantMessageParam param = new SendInstantMessageParam();
+        try {
+            param.setContent(content == null ? "" : content);
+            param.setContentType(
+                    contentType == null || contentType.trim().isEmpty()
+                            ? "text/plain"
+                            : contentType.trim());
+            sendInstantMessage(param);
+        } finally {
+            param.delete();
+        }
+    }
+
+    void sendTyping(boolean typing) throws Exception {
+        SendTypingIndicationParam param = new SendTypingIndicationParam();
+        try {
+            param.setIsTyping(typing);
+            sendTypingIndication(param);
+        } finally {
+            param.delete();
         }
     }
 

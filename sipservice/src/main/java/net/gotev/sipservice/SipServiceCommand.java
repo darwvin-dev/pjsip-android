@@ -575,6 +575,30 @@ public class SipServiceCommand implements SipServiceConstants {
     }
 
     /**
+     * Publishes the local user's presence for one SIP account. The account config enables PUBLISH;
+     * servers that do not support presence publication may reject the optional transaction without
+     * affecting REGISTER.
+     */
+    public static void setPresence(
+            Context context,
+            String accountID,
+            int status,
+            int activity,
+            String statusText,
+            String note
+    ) {
+        checkAccount(accountID);
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_SET_PRESENCE);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_PRESENCE_STATUS, status);
+        intent.putExtra(PARAM_PRESENCE_TEXT, statusText == null ? "" : statusText);
+        intent.putExtra(PARAM_PRESENCE_NOTE, note == null ? "" : note);
+        intent.putExtra(PARAM_SUBSCRIPTION_CODE, activity);
+        context.startService(intent);
+    }
+
+    /**
      * Sets up the incoming video feed. If the call does not exist or has been terminated, a disconnected
      * state will be sent to
      * {@link BroadcastEventReceiver#onCallState(String, int, int, int, long)}

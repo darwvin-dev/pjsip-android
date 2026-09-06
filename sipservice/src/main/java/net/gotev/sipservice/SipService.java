@@ -124,6 +124,9 @@ public class SipService extends BackgroundService implements SipServiceConstants
                 case ACTION_GET_CALL_STATUS:
                     handleGetCallStatus(intent);
                     break;
+                case ACTION_GET_CALL_STATS:
+                    handleGetCallStats(intent);
+                    break;
                 case ACTION_SEND_DTMF:
                     handleSendDTMF(intent);
                     break;
@@ -278,6 +281,16 @@ public class SipService extends BackgroundService implements SipServiceConstants
             mBroadcastEmitter.callState(accountID, callID, sipCall.getCurrentState(), callStatusCode, sipCall.getConnectTimestamp());
         }
     }
+
+    private void handleGetCallStats(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        int callID = intent.getIntExtra(PARAM_CALL_ID, -1);
+        SipCall sipCall = getCall(accountID, callID);
+        if (sipCall != null) {
+            sipCall.emitCurrentCallStats();
+        }
+    }
+
 
     private void handleSendDTMF(Intent intent) {
         String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);

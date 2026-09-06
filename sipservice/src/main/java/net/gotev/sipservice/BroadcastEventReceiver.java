@@ -122,6 +122,23 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
                     intent.getIntExtra(PARAM_PEER_CALL_ID, -1),
                     intent.getBooleanExtra(PARAM_FEATURE_ENABLED, false),
                     intent.getStringExtra(PARAM_ERROR_MESSAGE));
+
+        } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.PRESENCE_STATE).equals(action)) {
+            onPresenceState(
+                    intent.getStringExtra(PARAM_ACCOUNT_ID),
+                    intent.getStringExtra(PARAM_BUDDY_URI),
+                    intent.getIntExtra(PARAM_PRESENCE_STATUS, 0),
+                    intent.getStringExtra(PARAM_PRESENCE_TEXT),
+                    intent.getStringExtra(PARAM_PRESENCE_NOTE),
+                    intent.getStringExtra(PARAM_SUBSCRIPTION_STATE),
+                    intent.getIntExtra(PARAM_SUBSCRIPTION_CODE, 0),
+                    intent.getStringExtra(PARAM_SUBSCRIPTION_REASON));
+
+        } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.BLF_STATE).equals(action)) {
+            onBlfState(
+                    intent.getStringExtra(PARAM_ACCOUNT_ID),
+                    intent.getStringExtra(PARAM_BUDDY_URI),
+                    intent.getStringExtra(PARAM_BLF_STATE));
         }
     }
 
@@ -173,6 +190,10 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
                 BroadcastEventEmitter.BroadcastAction.RECORDING_STATE));
         intentFilter.addAction(BroadcastEventEmitter.getAction(
                 BroadcastEventEmitter.BroadcastAction.CONFERENCE_STATE));
+        intentFilter.addAction(BroadcastEventEmitter.getAction(
+                BroadcastEventEmitter.BroadcastAction.PRESENCE_STATE));
+        intentFilter.addAction(BroadcastEventEmitter.getAction(
+                BroadcastEventEmitter.BroadcastAction.BLF_STATE));
         if (Build.VERSION.SDK_INT >= 34) {
             context.registerReceiver( this, intentFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {
@@ -308,6 +329,24 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
     ) {
         Logger.debug(LOG_TAG, "onConferenceState - callID: " + callID +
                 ", peerCallID: " + peerCallID + ", connected: " + connected);
+    }
+
+    protected void onPresenceState(
+            String accountID,
+            String buddyUri,
+            int status,
+            String statusText,
+            String note,
+            String subscriptionState,
+            int subscriptionCode,
+            String subscriptionReason
+    ) {
+        Logger.debug(LOG_TAG, "onPresenceState - status: " + status +
+                ", subscription: " + subscriptionState);
+    }
+
+    protected void onBlfState(String accountID, String buddyUri, String state) {
+        Logger.debug(LOG_TAG, "onBlfState - state: " + state);
     }
 
 }

@@ -40,6 +40,9 @@ public class SipAccountData implements Parcelable {
     private int srtpSecureSignalling = 0; // not required
     private SipAccountTransport transport = SipAccountTransport.UDP;
     private String sipInstance;
+    private String authorizationUsername;
+    private String outboundProxy;
+    private String displayName;
 
     public SipAccountData() { }
 
@@ -74,6 +77,9 @@ public class SipAccountData implements Parcelable {
         parcel.writeInt(srtpSecureSignalling);
         parcel.writeInt(transport.ordinal());
         parcel.writeString(sipInstance);
+        parcel.writeString(authorizationUsername);
+        parcel.writeString(outboundProxy);
+        parcel.writeString(displayName);
     }
 
     private SipAccountData(Parcel in) {
@@ -92,6 +98,9 @@ public class SipAccountData implements Parcelable {
         srtpSecureSignalling = in.readInt();
         transport = SipAccountTransport.getTransportByCode(in.readInt());
         sipInstance = in.readString();
+        authorizationUsername = in.readString();
+        outboundProxy = in.readString();
+        displayName = in.readString();
     }
 
     @Override
@@ -246,12 +255,42 @@ public class SipAccountData implements Parcelable {
         this.sipInstance = sipInstance;
         return this;
     }
+
+    public String getAuthorizationUsername() {
+        return authorizationUsername;
+    }
+
+    public SipAccountData setAuthorizationUsername(String authorizationUsername) {
+        this.authorizationUsername = authorizationUsername;
+        return this;
+    }
+
+    public String getOutboundProxy() {
+        return outboundProxy;
+    }
+
+    public SipAccountData setOutboundProxy(String outboundProxy) {
+        this.outboundProxy = outboundProxy;
+        return this;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public SipAccountData setDisplayName(String displayName) {
+        this.displayName = displayName;
+        return this;
+    }
     /*          Getters and Setters end        */
 
     /*****          Utilities        ******/
     AuthCredInfo getAuthCredInfo() {
+        String authUser = authorizationUsername == null || authorizationUsername.trim().isEmpty()
+                ? username
+                : authorizationUsername.trim();
         return new AuthCredInfo(authenticationType, realm,
-                username, 0, password);
+                authUser, 0, password);
     }
 
     String getIdUri() {
@@ -262,7 +301,23 @@ public class SipAccountData implements Parcelable {
     }
 
     String getProxyUri() {
+        if (outboundProxy != null && !outboundProxy.trim().isEmpty()) {
+            String proxy = outboundProxy.trim();
+            if (proxy.startsWith("sip:") || proxy.startsWith("sips:")) {
+                return proxy;
+            }
+            return "sip:" + proxy + getTransportString();
+        }
         return "sip:" + host + ":" + port + getTransportString();
+    }
+
+    String getConfiguredIdUri() {
+        String idUri = getIdUri();
+        if (displayName == null || displayName.trim().isEmpty()) {
+            return idUri;
+        }
+        String safeDisplay = displayName.trim().replace("\"", "'");
+        return "\"" + safeDisplay + "\" <" + idUri + ">";
     }
 
     String getRegistrarUri() {
@@ -304,7 +359,7 @@ public class SipAccountData implements Parcelable {
         AccountConfig accountConfig = new AccountConfig();
 
         // account configs
-        accountConfig.setIdUri(getIdUri());
+        accountConfig.setIdUri(getConfiguredIdUri());
 
         // account registration stuff configs
         if (callId != null && !callId.isEmpty()) {
@@ -388,6 +443,9 @@ public class SipAccountData implements Parcelable {
         if (srtpSecureSignalling != that.srtpSecureSignalling) return false;
         if (!Objects.equals(transport, that.transport)) return false;
         if (!Objects.equals(sipInstance, that.sipInstance)) return false;
+        if (!Objects.equals(authorizationUsername, that.authorizationUsername)) return false;
+        if (!Objects.equals(outboundProxy, that.outboundProxy)) return false;
+        if (!Objects.equals(displayName, that.displayName)) return false;
 
         return getIdUri().equals(that.getIdUri());
 
@@ -407,7 +465,10 @@ public class SipAccountData implements Parcelable {
         result = 31 * result + srtpUse;
         result = 31 * result + srtpSecureSignalling;
         result = 31 * result + transport.hashCode();
-        result = 31 * result + sipInstance.hashCode();
+        result = 31 * result + (sipInstance == null ? 0 : sipInstance.hashCode());
+        result = 31 * result + (authorizationUsername == null ? 0 : authorizationUsername.hashCode());
+        result = 31 * result + (outboundProxy == null ? 0 : outboundProxy.hashCode());
+        result = 31 * result + (displayName == null ? 0 : displayName.hashCode());
         return result;
     }
 

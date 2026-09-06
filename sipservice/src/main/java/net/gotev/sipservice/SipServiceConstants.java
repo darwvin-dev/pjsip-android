@@ -42,6 +42,8 @@ public interface SipServiceConstants {
     String ACTION_DISCONNECT_CONFERENCE = "disconnectConference";
     String ACTION_SUBSCRIBE_BUDDY = "subscribeBuddy";
     String ACTION_UNSUBSCRIBE_BUDDY = "unsubscribeBuddy";
+    String ACTION_SEND_INSTANT_MESSAGE = "sendInstantMessage";
+    String ACTION_SEND_TYPING = "sendTyping";
 
     /*
      * Generic Parameters
@@ -85,6 +87,13 @@ public interface SipServiceConstants {
     String PARAM_SUBSCRIPTION_CODE = "subscriptionCode";
     String PARAM_SUBSCRIPTION_REASON = "subscriptionReason";
     String PARAM_BLF_STATE = "blfState";
+    String PARAM_MESSAGE_BODY = "messageBody";
+    String PARAM_MESSAGE_CONTENT_TYPE = "messageContentType";
+    String PARAM_MESSAGE_FROM_URI = "messageFromUri";
+    String PARAM_MESSAGE_TO_URI = "messageToUri";
+    String PARAM_MESSAGE_STATUS_CODE = "messageStatusCode";
+    String PARAM_MESSAGE_REASON = "messageReason";
+    String PARAM_IS_TYPING = "isTyping";
 
     /**
      * Specific Parameters passed in the broadcast intents.

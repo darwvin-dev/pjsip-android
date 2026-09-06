@@ -13,6 +13,7 @@ public interface SipServiceConstants {
     String ACTION_HANG_UP_CALLS = "hangUpCalls";
     String ACTION_HOLD_CALLS = "holdCalls";
     String ACTION_GET_CALL_STATUS = "getCallStatus";
+    String ACTION_GET_CALL_STATS = "getCallStats";
     String ACTION_SEND_DTMF = "sendDtmf";
     String ACTION_ACCEPT_INCOMING_CALL = "acceptIncomingCall";
     String ACTION_DECLINE_INCOMING_CALL = "declineIncomingCall";

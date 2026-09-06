@@ -807,11 +807,53 @@ public class SipCall extends Call {
         }
     }
 
-    private void sendCallStats(int callID, int duration, int callStatus) {
-        String audioCodec = streamInfo.getCodecName().toLowerCase()+"_"+streamInfo.getCodecClockRate();
+    /**
+     * Broadcast a snapshot of the currently active audio stream without mutating call state.
+     * This powers DarwPhone's live call-health UI while the dialog is still established.
+     *
+     * @return true when an active audio stream was found and emitted.
+     */
+    public boolean emitCurrentCallStats() {
+        try {
+            CallInfo info = getInfo();
+            for (int index = 0; index < info.getMedia().size(); index++) {
+                CallMediaInfo mediaInfo = info.getMedia().get(index);
+                if (mediaInfo.getType() != pjmedia_type.PJMEDIA_TYPE_AUDIO) continue;
+                StreamInfo currentInfo = getStreamInfo(index);
+                StreamStat currentStat = getStreamStat(index);
+                int duration = connectTimestamp > 0
+                        ? (int)Math.max(0, (System.currentTimeMillis() - connectTimestamp) / 1000L)
+                        : 0;
+                int status = info.getLastStatusCode();
+                broadcastCallStats(getId(), duration, status, currentInfo, currentStat);
+                return true;
+            }
+        } catch (Exception ex) {
+            Logger.error(LOG_TAG, "Unable to capture live call stats", ex);
+        }
+        return false;
+    }
 
-        RtcpStreamStat rxStat = streamStat.getRtcp().getRxStat();
-        RtcpStreamStat txStat = streamStat.getRtcp().getTxStat();
+    private void sendCallStats(int callID, int duration, int callStatus) {
+        broadcastCallStats(callID, duration, callStatus, streamInfo, streamStat);
+        streamInfo = null;
+        streamStat = null;
+    }
+
+    private void broadcastCallStats(
+            int callID,
+            int duration,
+            int callStatus,
+            StreamInfo currentInfo,
+            StreamStat currentStat
+    ) {
+        if (currentInfo == null || currentStat == null) return;
+
+        String audioCodec =
+                currentInfo.getCodecName().toLowerCase()+"_"+currentInfo.getCodecClockRate();
+
+        RtcpStreamStat rxStat = currentStat.getRtcp().getRxStat();
+        RtcpStreamStat txStat = currentStat.getRtcp().getTxStat();
 
         Jitter rxJitter = new Jitter(
                 rxStat.getJitterUsec().getMax(),
@@ -841,8 +883,13 @@ public class SipCall extends Call {
                 txJitter
         );
 
-        account.getService().getBroadcastEmitter().callStats(callID, duration, audioCodec, callStatus, rx, tx);
-        streamInfo = null;
-        streamStat = null;
+        account.getService().getBroadcastEmitter().callStats(
+                account.getData().getIdUri(),
+                callID,
+                duration,
+                audioCodec,
+                callStatus,
+                rx,
+                tx);
     }
 }

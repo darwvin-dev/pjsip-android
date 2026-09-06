@@ -233,6 +233,20 @@ public class SipServiceCommand implements SipServiceConstants {
     }
 
     /**
+     * Requests a live RTP/RTCP snapshot for one active call. The result is delivered to
+     * {@link BroadcastEventReceiver#onCallStats(String, int, int, String, int, RtpStreamStats, RtpStreamStats)}.
+     */
+    public static void getCallStats(Context context, String accountID, int callID) {
+        checkAccount(accountID);
+
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_GET_CALL_STATS);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_CALL_ID, callID);
+        context.startService(intent);
+    }
+
+    /**
      * Hangs up an active call. If the call does not exist or has been terminated, a disconnected
      * state will be sent to
      * {@link BroadcastEventReceiver#onCallState(String, int, int, int, long)}

@@ -5,6 +5,7 @@ import android.view.Surface;
 
 import org.pjsip.pjsua2.AudDevManager;
 import org.pjsip.pjsua2.AudioMedia;
+import org.pjsip.pjsua2.AudioMediaRecorder;
 import org.pjsip.pjsua2.Call;
 import org.pjsip.pjsua2.CallInfo;
 import org.pjsip.pjsua2.CallMediaInfo;
@@ -41,6 +42,9 @@ import org.pjsip.pjsua2.pjsua_call_media_status;
 import org.pjsip.pjsua2.pjsua_call_vid_strm_op;
 import org.pjsip.pjsua2.pjsua_vid_req_keyframe_method;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -77,6 +81,14 @@ public class SipCall extends Call {
 
     private StreamInfo streamInfo = null;
     private StreamStat streamStat = null;
+
+    // Active audio media is retained only for the lifetime of the dialog. It enables app-owned
+    // recording and local conference bridging without bypassing the service's SIP thread.
+    private AudioMedia activeAudioMedia = null;
+    private AudioMediaRecorder audioRecorder = null;
+    private String recordingPath = null;
+    private final Set<SipCall> conferencePeers =
+            Collections.newSetFromMap(new IdentityHashMap<SipCall, Boolean>());
 
     /**
      * Incoming call constructor.
@@ -135,6 +147,7 @@ public class SipCall extends Call {
 
             if (callState == pjsip_inv_state.PJSIP_INV_STATE_DISCONNECTED) {
                 account.getService().stopPjsipRingbackTone();
+                cleanupAudioFeatures();
                 stopVideoFeeds();
                 account.removeCall(callID);
                 if (connectTimestamp > 0 && streamInfo != null && streamStat != null) {
@@ -503,6 +516,8 @@ public class SipCall extends Call {
     private void handleAudioMedia(Media media) {
         AudioMedia audioMedia = AudioMedia.typecastFromMedia(media);
 
+        activeAudioMedia = audioMedia;
+
         // connect the call audio media to sound device
         try {
             AudDevManager audDevManager = account.getService().getAudDevManager();
@@ -520,6 +535,130 @@ public class SipCall extends Call {
         } catch (Exception exc) {
             Logger.error(LOG_TAG, "Error while connecting audio media to sound device", exc);
         }
+    }
+
+
+    /**
+     * Record the local microphone plus this call's remote audio to a WAV file.
+     * Conference peers are also mixed into the recorder when present.
+     */
+    public synchronized void startRecording(String filePath) throws Exception {
+        if (filePath == null || filePath.trim().isEmpty()) {
+            throw new IllegalArgumentException("Recording path must not be empty");
+        }
+        if (activeAudioMedia == null) {
+            throw new IllegalStateException("Call audio media is not active yet");
+        }
+        if (audioRecorder != null) {
+            stopRecording();
+        }
+
+        AudioMediaRecorder recorder = new AudioMediaRecorder();
+        try {
+            recorder.createRecorder(filePath);
+            activeAudioMedia.startTransmit(recorder);
+            account.getService().getAudDevManager().getCaptureDevMedia().startTransmit(recorder);
+            for (SipCall peer : conferencePeers) {
+                AudioMedia peerMedia = peer.activeAudioMedia;
+                if (peerMedia != null) {
+                    peerMedia.startTransmit(recorder);
+                }
+            }
+            audioRecorder = recorder;
+            recordingPath = filePath;
+        } catch (Exception error) {
+            try { recorder.delete(); } catch (Exception ignored) { }
+            throw error;
+        }
+    }
+
+    public synchronized void stopRecording() {
+        AudioMediaRecorder recorder = audioRecorder;
+        if (recorder == null) return;
+
+        try {
+            if (activeAudioMedia != null) activeAudioMedia.stopTransmit(recorder);
+        } catch (Exception ignored) { }
+        try {
+            account.getService().getAudDevManager().getCaptureDevMedia().stopTransmit(recorder);
+        } catch (Exception ignored) { }
+        for (SipCall peer : conferencePeers) {
+            try {
+                if (peer.activeAudioMedia != null) peer.activeAudioMedia.stopTransmit(recorder);
+            } catch (Exception ignored) { }
+        }
+        try { recorder.delete(); } catch (Exception ignored) { }
+        audioRecorder = null;
+        recordingPath = null;
+    }
+
+    public synchronized boolean isRecording() {
+        return audioRecorder != null;
+    }
+
+    public synchronized String getRecordingPath() {
+        return recordingPath;
+    }
+
+    /**
+     * Create a local full-duplex bridge between two established dialogs. The existing
+     * sound-device links remain in place, so the local user hears both parties and both remote
+     * parties hear the local microphone plus each other.
+     */
+    public synchronized void connectConferencePeer(SipCall peer) throws Exception {
+        if (peer == null || peer == this) {
+            throw new IllegalArgumentException("Conference peer must be a different call");
+        }
+        AudioMedia localMedia = activeAudioMedia;
+        AudioMedia peerMedia = peer.activeAudioMedia;
+        if (localMedia == null || peerMedia == null) {
+            throw new IllegalStateException("Both calls must have active audio media");
+        }
+        if (conferencePeers.contains(peer)) return;
+
+        localMedia.startTransmit(peerMedia);
+        peerMedia.startTransmit(localMedia);
+        conferencePeers.add(peer);
+        peer.conferencePeers.add(this);
+
+        // If either call is being recorded, include the newly-joined remote leg.
+        if (audioRecorder != null) peerMedia.startTransmit(audioRecorder);
+        if (peer.audioRecorder != null) localMedia.startTransmit(peer.audioRecorder);
+    }
+
+    public synchronized void disconnectConferencePeer(SipCall peer) {
+        if (peer == null || !conferencePeers.contains(peer)) return;
+        try {
+            if (activeAudioMedia != null && peer.activeAudioMedia != null) {
+                activeAudioMedia.stopTransmit(peer.activeAudioMedia);
+                peer.activeAudioMedia.stopTransmit(activeAudioMedia);
+            }
+        } catch (Exception ignored) { }
+        try {
+            if (audioRecorder != null && peer.activeAudioMedia != null) {
+                peer.activeAudioMedia.stopTransmit(audioRecorder);
+            }
+        } catch (Exception ignored) { }
+        try {
+            if (peer.audioRecorder != null && activeAudioMedia != null) {
+                activeAudioMedia.stopTransmit(peer.audioRecorder);
+            }
+        } catch (Exception ignored) { }
+        conferencePeers.remove(peer);
+        peer.conferencePeers.remove(this);
+    }
+
+    public synchronized boolean isInConferenceWith(SipCall peer) {
+        return conferencePeers.contains(peer);
+    }
+
+    private synchronized void cleanupAudioFeatures() {
+        stopRecording();
+        SipCall[] peers = conferencePeers.toArray(new SipCall[0]);
+        for (SipCall peer : peers) {
+            disconnectConferencePeer(peer);
+        }
+        activeAudioMedia = null;
     }
 
     private void handleVideoMedia(CallMediaInfo mediaInfo) {

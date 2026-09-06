@@ -4,6 +4,9 @@ import org.pjsip.pjsua2.Account;
 import org.pjsip.pjsua2.CallInfo;
 import org.pjsip.pjsua2.CallOpParam;
 import org.pjsip.pjsua2.OnIncomingCallParam;
+import org.pjsip.pjsua2.OnInstantMessageParam;
+import org.pjsip.pjsua2.OnInstantMessageStatusParam;
+import org.pjsip.pjsua2.OnTypingIndicationParam;
 import org.pjsip.pjsua2.OnMwiInfoParam;
 import org.pjsip.pjsua2.OnRegStateParam;
 import org.pjsip.pjsua2.SipRxData;
@@ -209,4 +212,35 @@ public class SipAccount extends Account {
             Logger.error(LOG_TAG, "Error while getting caller info", ex);
         }
     }
+    @Override
+    public void onInstantMessage(OnInstantMessageParam prm) {
+        super.onInstantMessage(prm);
+        service.getBroadcastEmitter().instantMessageReceived(
+                data.getIdUri(),
+                prm.getFromUri(),
+                prm.getToUri(),
+                prm.getContentType(),
+                prm.getMsgBody());
+    }
+
+    @Override
+    public void onInstantMessageStatus(OnInstantMessageStatusParam prm) {
+        super.onInstantMessageStatus(prm);
+        service.getBroadcastEmitter().instantMessageStatus(
+                data.getIdUri(),
+                prm.getToUri(),
+                prm.getMsgBody(),
+                prm.getCode(),
+                prm.getReason());
+    }
+
+    @Override
+    public void onTypingIndication(OnTypingIndicationParam prm) {
+        super.onTypingIndication(prm);
+        service.getBroadcastEmitter().typingIndication(
+                data.getIdUri(),
+                prm.getFromUri(),
+                prm.getIsTyping());
+    }
+
 }

@@ -594,7 +594,7 @@ public class SipServiceCommand implements SipServiceConstants {
         intent.putExtra(PARAM_PRESENCE_STATUS, status);
         intent.putExtra(PARAM_PRESENCE_TEXT, statusText == null ? "" : statusText);
         intent.putExtra(PARAM_PRESENCE_NOTE, note == null ? "" : note);
-        intent.putExtra(PARAM_SUBSCRIPTION_CODE, activity);
+        intent.putExtra(PARAM_PRESENCE_ACTIVITY, activity);
         context.startService(intent);
     }
 

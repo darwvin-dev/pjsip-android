@@ -131,6 +131,8 @@ public interface SipServiceConstants {
     String PARAM_CALL_STATS_CALL_STATUS = "callStatsCallStatus";
     String PARAM_CALL_STATS_RX_STREAM = "callStatsRxStream";
     String PARAM_CALL_STATS_TX_STREAM = "callStatsTxStream";
+    String PARAM_CALL_STATS_MEDIA_PROTO = "callStatsMediaProto";
+    String PARAM_CALL_STATS_REMOTE_RTP = "callStatsRemoteRtp";
 
     // Voicemail waiting counts (VoicemailStatus), parsed from the MWI NOTIFY (RFC 3842).
     String PARAM_VOICEMAIL_STATUS = "voicemailStatus";

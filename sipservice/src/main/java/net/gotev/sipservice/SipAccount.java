@@ -84,39 +84,33 @@ public class SipAccount extends Account {
 
     public SipCall addOutgoingCall(final String numberToDial, boolean isVideo, boolean isVideoConference, boolean isTransfer) {
 
-        // check if there's already an ongoing call
-        int totalCalls = 0;
-        for (SipAccount _sipAccount: SipService.getActiveSipAccounts().values()) {
-            totalCalls += _sipAccount.getCallIDs().size();
-        }
+        // PJSIP supports several simultaneous calls per account. The previous wrapper-level
+        // global call-count guard artificially forced the service into single-call mode and
+        // also prevented call waiting. Keep every dialog in activeCalls and let the app decide
+        // which call is foreground/held.
+        SipCall call = new SipCall(this);
+        call.setVideoParams(isVideo, isVideoConference);
 
-        // allow calls only if there are no other ongoing calls
-        if (totalCalls <= (isTransfer ? 1 : 0)) {
-            SipCall call = new SipCall(this);
-            call.setVideoParams(isVideo, isVideoConference);
-
-            CallOpParam callOpParam = new CallOpParam();
-            try {
-                if (numberToDial.startsWith("sip:")) {
-                    call.makeCall(numberToDial, callOpParam);
+        CallOpParam callOpParam = new CallOpParam();
+        try {
+            if (numberToDial.startsWith("sip:") || numberToDial.startsWith("sips:")) {
+                call.makeCall(numberToDial, callOpParam);
+            } else {
+                if ("*".equals(data.getRealm())) {
+                    call.makeCall("sip:" + numberToDial, callOpParam);
                 } else {
-                    if ("*".equals(data.getRealm())) {
-                        call.makeCall("sip:" + numberToDial, callOpParam);
-                    } else {
-                        call.makeCall("sip:" + numberToDial + "@" + data.getRealm(), callOpParam);
-                    }
+                    call.makeCall("sip:" + numberToDial + "@" + data.getRealm(), callOpParam);
                 }
-                activeCalls.put(call.getId(), call);
-                Logger.debug(LOG_TAG, "New outgoing call with ID: " + call.getId());
-
-                return call;
-
-            } catch (Exception exc) {
-                Logger.error(LOG_TAG, "Error while making outgoing call", exc);
-                return null;
             }
+            activeCalls.put(call.getId(), call);
+            Logger.debug(LOG_TAG, "New outgoing call with ID: " + call.getId());
+
+            return call;
+
+        } catch (Exception exc) {
+            Logger.error(LOG_TAG, "Error while making outgoing call", exc);
+            return null;
         }
-        return null;
     }
 
     public SipCall addOutgoingCall(final String numberToDial) {
@@ -183,23 +177,9 @@ public class SipAccount extends Account {
             return;
         }
 
-        // Send 486 Busy Here if there's an already ongoing call
-        int totalCalls = 0;
-        for (SipAccount _sipAccount: SipService.getActiveSipAccounts().values()) {
-            totalCalls += _sipAccount.getCallIDs().size();
-        }
-
-        if (totalCalls > 1) {
-            try {
-                CallerInfo contactInfo = new CallerInfo(call.getInfo());
-                service.getBroadcastEmitter().missedCall(contactInfo.getDisplayName(), contactInfo.getRemoteUri());
-                call.declineIncomingCall(pjsip_status_code.PJSIP_SC_BUSY_HERE);
-                Logger.debug(LOG_TAG, "Sending busy to call ID: " + prm.getCallId());
-            } catch(Exception ex) {
-                Logger.error(LOG_TAG, "Error while getting missed call info", ex);
-            }
-            return;
-        }
+        // Do not reject a second INVITE merely because another dialog exists. DarwPhone
+        // implements call waiting in the app layer: the established call can stay held while
+        // this one rings, and the user chooses which dialog to answer.
 
         try {
             // Answer with 180 Ringing

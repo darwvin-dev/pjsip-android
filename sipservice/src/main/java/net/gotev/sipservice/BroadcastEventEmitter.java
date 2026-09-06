@@ -41,7 +41,10 @@ public class BroadcastEventEmitter implements SipServiceConstants {
         RECORDING_STATE,
         CONFERENCE_STATE,
         PRESENCE_STATE,
-        BLF_STATE
+        BLF_STATE,
+        INSTANT_MESSAGE_RECEIVED,
+        INSTANT_MESSAGE_STATUS,
+        TYPING_INDICATION
     }
 
     public BroadcastEventEmitter(Context context) {
@@ -314,6 +317,49 @@ public class BroadcastEventEmitter implements SipServiceConstants {
         intent.putExtra(PARAM_ACCOUNT_ID, accountID);
         intent.putExtra(PARAM_BUDDY_URI, buddyUri);
         intent.putExtra(PARAM_BLF_STATE, state);
+        sendBroadcast(intent);
+    }
+
+    void instantMessageReceived(
+            String accountID,
+            String fromUri,
+            String toUri,
+            String contentType,
+            String body
+    ) {
+        final Intent intent = new Intent();
+        intent.setAction(getAction(BroadcastAction.INSTANT_MESSAGE_RECEIVED));
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_MESSAGE_FROM_URI, fromUri);
+        intent.putExtra(PARAM_MESSAGE_TO_URI, toUri);
+        intent.putExtra(PARAM_MESSAGE_CONTENT_TYPE, contentType);
+        intent.putExtra(PARAM_MESSAGE_BODY, body);
+        sendBroadcast(intent);
+    }
+
+    void instantMessageStatus(
+            String accountID,
+            String toUri,
+            String body,
+            int code,
+            String reason
+    ) {
+        final Intent intent = new Intent();
+        intent.setAction(getAction(BroadcastAction.INSTANT_MESSAGE_STATUS));
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_MESSAGE_TO_URI, toUri);
+        intent.putExtra(PARAM_MESSAGE_BODY, body);
+        intent.putExtra(PARAM_MESSAGE_STATUS_CODE, code);
+        intent.putExtra(PARAM_MESSAGE_REASON, reason);
+        sendBroadcast(intent);
+    }
+
+    void typingIndication(String accountID, String fromUri, boolean typing) {
+        final Intent intent = new Intent();
+        intent.setAction(getAction(BroadcastAction.TYPING_INDICATION));
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_MESSAGE_FROM_URI, fromUri);
+        intent.putExtra(PARAM_IS_TYPING, typing);
         sendBroadcast(intent);
     }
 

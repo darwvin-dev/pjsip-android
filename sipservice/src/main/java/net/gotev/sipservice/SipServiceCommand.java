@@ -808,6 +808,42 @@ public class SipServiceCommand implements SipServiceConstants {
         context.startService(intent);
     }
 
+    public static void sendInstantMessage(
+            Context context,
+            String accountID,
+            String toUri,
+            String body,
+            String contentType
+    ) {
+        checkAccount(accountID);
+        if (toUri == null || toUri.trim().isEmpty()) {
+            throw new IllegalArgumentException("toUri MUST not be empty!");
+        }
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_SEND_INSTANT_MESSAGE);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_BUDDY_URI, toUri.trim());
+        intent.putExtra(PARAM_MESSAGE_BODY, body == null ? "" : body);
+        intent.putExtra(PARAM_MESSAGE_CONTENT_TYPE,
+                contentType == null || contentType.trim().isEmpty() ? "text/plain" : contentType);
+        context.startService(intent);
+    }
+
+    public static void sendTyping(
+            Context context,
+            String accountID,
+            String toUri,
+            boolean typing
+    ) {
+        checkAccount(accountID);
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_SEND_TYPING);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_BUDDY_URI, toUri == null ? "" : toUri.trim());
+        intent.putExtra(PARAM_IS_TYPING, typing);
+        context.startService(intent);
+    }
+
     /**
      * Sets the camera manager within the PjCamera2Info class
      * it is used to enumerate the video devices without the CAMERA permission

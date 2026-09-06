@@ -27,6 +27,7 @@ public interface SipServiceConstants {
     String ACTION_GET_REGISTRATION_STATUS = "getRegistrationStatus";
     String ACTION_REFRESH_REGISTRATION = "refreshRegistration";
     String ACTION_SET_DND = "setDND";
+    String ACTION_SET_PRESENCE = "setPresence";
     String ACTION_SET_INCOMING_VIDEO = "setIncomingVideo";
     String ACTION_SET_SELF_VIDEO_ORIENTATION = "setSelfVideoOrientation";
     String ACTION_SET_VIDEO_MUTE = "setVideoMute";

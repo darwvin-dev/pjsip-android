@@ -82,6 +82,7 @@ public interface SipServiceConstants {
     String PARAM_BUDDY_URI = "buddyUri";
     String PARAM_BUDDY_DIALOG_EVENT = "buddyDialogEvent";
     String PARAM_PRESENCE_STATUS = "presenceStatus";
+    String PARAM_PRESENCE_ACTIVITY = "presenceActivity";
     String PARAM_PRESENCE_TEXT = "presenceText";
     String PARAM_PRESENCE_NOTE = "presenceNote";
     String PARAM_SUBSCRIPTION_STATE = "subscriptionState";

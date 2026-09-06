@@ -32,6 +32,8 @@ import org.pjsip.pjsua2.pjsua_destroy_flag;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -48,6 +50,7 @@ public class SipService extends BackgroundService implements SipServiceConstants
     private List<SipAccountData> mConfiguredAccounts = new ArrayList<>();
     private SipAccountData mConfiguredGuestAccount;
     private static final ConcurrentHashMap<String, SipAccount> mActiveSipAccounts = new ConcurrentHashMap<>();
+    private final Map<String, SipBuddy> mActiveBuddies = new HashMap<>();
     private BroadcastEventEmitter mBroadcastEmitter;
     private SipEndpoint mEndpoint;
 
@@ -159,6 +162,12 @@ public class SipService extends BackgroundService implements SipServiceConstants
                     break;
                 case ACTION_DISCONNECT_CONFERENCE:
                     handleDisconnectConference(intent);
+                    break;
+                case ACTION_SUBSCRIBE_BUDDY:
+                    handleSubscribeBuddy(intent);
+                    break;
+                case ACTION_UNSUBSCRIBE_BUDDY:
+                    handleUnsubscribeBuddy(intent);
                     break;
                 case ACTION_GET_CODEC_PRIORITIES:
                     handleGetCodecPriorities();
@@ -552,6 +561,75 @@ public class SipService extends BackgroundService implements SipServiceConstants
                     accountID, callID, peerAccountID, peerCallID, true,
                     error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
         }
+    }
+
+    private void handleSubscribeBuddy(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        String requestedUri = intent.getStringExtra(PARAM_BUDDY_URI);
+        boolean dialogEvent = intent.getBooleanExtra(PARAM_BUDDY_DIALOG_EVENT, false);
+        SipAccount account = mActiveSipAccounts.get(accountID);
+        if (account == null || requestedUri == null || requestedUri.trim().isEmpty()) return;
+
+        String uri = normalizeBuddyUri(account, requestedUri.trim());
+        String key = buddyKey(accountID, uri, dialogEvent);
+        SipBuddy previous = mActiveBuddies.remove(key);
+        if (previous != null) previous.stopSubscription();
+
+        try {
+            SipBuddy buddy = new SipBuddy(account, uri, dialogEvent);
+            buddy.startSubscription();
+            mActiveBuddies.put(key, buddy);
+        } catch (Exception error) {
+            Logger.error(TAG, "Unable to subscribe SIP buddy", error);
+            if (dialogEvent) {
+                mBroadcastEmitter.blfState(accountID, uri, "error");
+            } else {
+                mBroadcastEmitter.presenceState(
+                        accountID, uri, 0, "", "", "error", 0,
+                        error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
+            }
+        }
+    }
+
+    private void handleUnsubscribeBuddy(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        String requestedUri = intent.getStringExtra(PARAM_BUDDY_URI);
+        boolean dialogEvent = intent.getBooleanExtra(PARAM_BUDDY_DIALOG_EVENT, false);
+        SipAccount account = mActiveSipAccounts.get(accountID);
+        if (account == null || requestedUri == null) return;
+
+        String uri = normalizeBuddyUri(account, requestedUri.trim());
+        SipBuddy buddy = mActiveBuddies.remove(buddyKey(accountID, uri, dialogEvent));
+        if (buddy != null) buddy.stopSubscription();
+    }
+
+    private String normalizeBuddyUri(SipAccount account, String uri) {
+        if (uri.startsWith("sip:") || uri.startsWith("sips:")) return uri;
+        String realm = account.getData().getRealm();
+        if (realm == null || realm.isEmpty() || "*".equals(realm)) return "sip:" + uri;
+        return "sip:" + uri + "@" + realm;
+    }
+
+    private String buddyKey(String accountID, String uri, boolean dialogEvent) {
+        return accountID + "\n" + uri + "\n" + (dialogEvent ? "dialog" : "presence");
+    }
+
+    private void removeBuddiesForAccount(String accountID) {
+        Iterator<Map.Entry<String, SipBuddy>> iterator = mActiveBuddies.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, SipBuddy> entry = iterator.next();
+            if (entry.getKey().startsWith(accountID + "\n")) {
+                entry.getValue().stopSubscription();
+                iterator.remove();
+            }
+        }
+    }
+
+    private void removeAllBuddies() {
+        for (SipBuddy buddy : mActiveBuddies.values()) {
+            buddy.stopSubscription();
+        }
+        mActiveBuddies.clear();
     }
 
     private void handleSetIncomingVideoFeed(Intent intent) {
@@ -1039,6 +1117,7 @@ public class SipService extends BackgroundService implements SipServiceConstants
             // and the pump run on SipThread, so once we clear the flag and drop any
             // pending pump repost, no further libHandleEvents call can race libDestroy.
             stopEventPump();
+            removeAllBuddies();
             deInitPjsipToneGenerator();
 
             /*
@@ -1265,6 +1344,7 @@ public class SipService extends BackgroundService implements SipServiceConstants
         }
 
         Logger.debug(TAG, "Removing SIP account " + getValue(getApplicationContext(), accountID));
+        removeBuddiesForAccount(accountID);
         account.delete();
         Logger.debug(TAG, "SIP account " + getValue(getApplicationContext(), accountID) + " successfully removed");
     }

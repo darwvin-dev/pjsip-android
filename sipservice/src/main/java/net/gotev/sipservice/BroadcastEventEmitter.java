@@ -37,7 +37,9 @@ public class BroadcastEventEmitter implements SipServiceConstants {
         CALL_RECONNECTION_STATE,
         SILENT_CALL_STATUS,
         NOTIFY_TLS_VERIFY_STATUS_FAILED,
-        VOICEMAIL_WAITING
+        VOICEMAIL_WAITING,
+        RECORDING_STATE,
+        CONFERENCE_STATE
     }
 
     public BroadcastEventEmitter(Context context) {
@@ -240,6 +242,37 @@ public class BroadcastEventEmitter implements SipServiceConstants {
         final Intent intent = new Intent();
         intent.setAction(getAction(BroadcastAction.VOICEMAIL_WAITING));
         intent.putExtra(PARAM_VOICEMAIL_STATUS, status);
+        sendBroadcast(intent);
+    }
+
+
+    void recordingState(String accountID, int callID, boolean enabled, String filePath, String error) {
+        final Intent intent = new Intent();
+        intent.setAction(getAction(BroadcastAction.RECORDING_STATE));
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_CALL_ID, callID);
+        intent.putExtra(PARAM_FEATURE_ENABLED, enabled);
+        intent.putExtra(PARAM_RECORDING_PATH, filePath);
+        intent.putExtra(PARAM_ERROR_MESSAGE, error);
+        sendBroadcast(intent);
+    }
+
+    void conferenceState(
+            String accountID,
+            int callID,
+            String peerAccountID,
+            int peerCallID,
+            boolean enabled,
+            String error
+    ) {
+        final Intent intent = new Intent();
+        intent.setAction(getAction(BroadcastAction.CONFERENCE_STATE));
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_CALL_ID, callID);
+        intent.putExtra(PARAM_PEER_ACCOUNT_ID, peerAccountID);
+        intent.putExtra(PARAM_PEER_CALL_ID, peerCallID);
+        intent.putExtra(PARAM_FEATURE_ENABLED, enabled);
+        intent.putExtra(PARAM_ERROR_MESSAGE, error);
         sendBroadcast(intent);
     }
 

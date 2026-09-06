@@ -39,7 +39,9 @@ public class BroadcastEventEmitter implements SipServiceConstants {
         NOTIFY_TLS_VERIFY_STATUS_FAILED,
         VOICEMAIL_WAITING,
         RECORDING_STATE,
-        CONFERENCE_STATE
+        CONFERENCE_STATE,
+        PRESENCE_STATE,
+        BLF_STATE
     }
 
     public BroadcastEventEmitter(Context context) {
@@ -273,6 +275,39 @@ public class BroadcastEventEmitter implements SipServiceConstants {
         intent.putExtra(PARAM_PEER_CALL_ID, peerCallID);
         intent.putExtra(PARAM_FEATURE_ENABLED, enabled);
         intent.putExtra(PARAM_ERROR_MESSAGE, error);
+        sendBroadcast(intent);
+    }
+
+
+    void presenceState(
+            String accountID,
+            String buddyUri,
+            int status,
+            String statusText,
+            String note,
+            String subscriptionState,
+            int subscriptionCode,
+            String subscriptionReason
+    ) {
+        final Intent intent = new Intent();
+        intent.setAction(getAction(BroadcastAction.PRESENCE_STATE));
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_BUDDY_URI, buddyUri);
+        intent.putExtra(PARAM_PRESENCE_STATUS, status);
+        intent.putExtra(PARAM_PRESENCE_TEXT, statusText);
+        intent.putExtra(PARAM_PRESENCE_NOTE, note);
+        intent.putExtra(PARAM_SUBSCRIPTION_STATE, subscriptionState);
+        intent.putExtra(PARAM_SUBSCRIPTION_CODE, subscriptionCode);
+        intent.putExtra(PARAM_SUBSCRIPTION_REASON, subscriptionReason);
+        sendBroadcast(intent);
+    }
+
+    void blfState(String accountID, String buddyUri, String state) {
+        final Intent intent = new Intent();
+        intent.setAction(getAction(BroadcastAction.BLF_STATE));
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_BUDDY_URI, buddyUri);
+        intent.putExtra(PARAM_BLF_STATE, state);
         sendBroadcast(intent);
     }
 

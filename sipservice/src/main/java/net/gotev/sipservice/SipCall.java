@@ -889,6 +889,8 @@ public class SipCall extends Call {
                 duration,
                 audioCodec,
                 callStatus,
+                currentInfo.getProto(),
+                currentInfo.getRemoteRtpAddress(),
                 rx,
                 tx);
     }

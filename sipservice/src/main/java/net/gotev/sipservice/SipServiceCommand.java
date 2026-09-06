@@ -302,7 +302,13 @@ public class SipServiceCommand implements SipServiceConstants {
      * @param dtmfTone DTMF tone to send (e.g. number from 0 to 9 or # or *).
      *                 You can send only one DTMF at a time.
      */
-    public static void sendDTMF(Context context, String accountID, int callID, String dtmfTone) {
+    public static void sendDTMF(
+            Context context,
+            String accountID,
+            int callID,
+            String dtmfTone,
+            int method
+    ) {
         checkAccount(accountID);
 
         Intent intent = new Intent(context, SipService.class);
@@ -310,7 +316,17 @@ public class SipServiceCommand implements SipServiceConstants {
         intent.putExtra(PARAM_ACCOUNT_ID, accountID);
         intent.putExtra(PARAM_CALL_ID, callID);
         intent.putExtra(PARAM_DTMF, dtmfTone);
+        intent.putExtra(PARAM_DTMF_METHOD, method);
         context.startService(intent);
+    }
+
+    public static void sendDTMF(Context context, String accountID, int callID, String dtmfTone) {
+        sendDTMF(
+                context,
+                accountID,
+                callID,
+                dtmfTone,
+                org.pjsip.pjsua2.pjsua_dtmf_method.PJSUA_DTMF_METHOD_RFC2833);
     }
 
     /**

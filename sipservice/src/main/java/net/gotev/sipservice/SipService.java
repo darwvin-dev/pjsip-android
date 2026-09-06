@@ -148,6 +148,18 @@ public class SipService extends BackgroundService implements SipServiceConstants
                 case ACTION_ATTENDED_TRANSFER_CALL:
                     handleAttendedTransferCall(intent);
                     break;
+                case ACTION_START_CALL_RECORDING:
+                    handleStartCallRecording(intent);
+                    break;
+                case ACTION_STOP_CALL_RECORDING:
+                    handleStopCallRecording(intent);
+                    break;
+                case ACTION_CONNECT_CONFERENCE:
+                    handleConnectConference(intent);
+                    break;
+                case ACTION_DISCONNECT_CONFERENCE:
+                    handleDisconnectConference(intent);
+                    break;
                 case ACTION_GET_CODEC_PRIORITIES:
                     handleGetCodecPriorities();
                     break;
@@ -461,6 +473,84 @@ public class SipService extends BackgroundService implements SipServiceConstants
         } catch (Exception exc) {
             Logger.error(TAG, "Error while finalizing attended transfer", exc);
             notifyCallDisconnected(accountID, callIdOrig);
+        }
+    }
+
+    private void handleStartCallRecording(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        int callID = intent.getIntExtra(PARAM_CALL_ID, -1);
+        String filePath = intent.getStringExtra(PARAM_RECORDING_PATH);
+        SipCall call = getCall(accountID, callID);
+        if (call == null) return;
+
+        try {
+            call.startRecording(filePath);
+            mBroadcastEmitter.recordingState(accountID, callID, true, filePath, null);
+        } catch (Exception error) {
+            Logger.error(TAG, "Unable to start call recording", error);
+            mBroadcastEmitter.recordingState(
+                    accountID, callID, false, filePath,
+                    error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
+        }
+    }
+
+    private void handleStopCallRecording(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        int callID = intent.getIntExtra(PARAM_CALL_ID, -1);
+        SipCall call = getCall(accountID, callID);
+        if (call == null) return;
+
+        String filePath = call.getRecordingPath();
+        try {
+            call.stopRecording();
+            mBroadcastEmitter.recordingState(accountID, callID, false, filePath, null);
+        } catch (Exception error) {
+            Logger.error(TAG, "Unable to stop call recording", error);
+            mBroadcastEmitter.recordingState(
+                    accountID, callID, call.isRecording(), filePath,
+                    error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
+        }
+    }
+
+    private void handleConnectConference(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        int callID = intent.getIntExtra(PARAM_CALL_ID, -1);
+        String peerAccountID = intent.getStringExtra(PARAM_PEER_ACCOUNT_ID);
+        int peerCallID = intent.getIntExtra(PARAM_PEER_CALL_ID, -1);
+        SipCall call = getCall(accountID, callID);
+        SipCall peer = getCall(peerAccountID, peerCallID);
+        if (call == null || peer == null) return;
+
+        try {
+            call.connectConferencePeer(peer);
+            mBroadcastEmitter.conferenceState(
+                    accountID, callID, peerAccountID, peerCallID, true, null);
+        } catch (Exception error) {
+            Logger.error(TAG, "Unable to connect local conference", error);
+            mBroadcastEmitter.conferenceState(
+                    accountID, callID, peerAccountID, peerCallID, false,
+                    error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
+        }
+    }
+
+    private void handleDisconnectConference(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        int callID = intent.getIntExtra(PARAM_CALL_ID, -1);
+        String peerAccountID = intent.getStringExtra(PARAM_PEER_ACCOUNT_ID);
+        int peerCallID = intent.getIntExtra(PARAM_PEER_CALL_ID, -1);
+        SipCall call = getCall(accountID, callID);
+        SipCall peer = getCall(peerAccountID, peerCallID);
+        if (call == null || peer == null) return;
+
+        try {
+            call.disconnectConferencePeer(peer);
+            mBroadcastEmitter.conferenceState(
+                    accountID, callID, peerAccountID, peerCallID, false, null);
+        } catch (Exception error) {
+            Logger.error(TAG, "Unable to disconnect local conference", error);
+            mBroadcastEmitter.conferenceState(
+                    accountID, callID, peerAccountID, peerCallID, true,
+                    error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage());
         }
     }
 

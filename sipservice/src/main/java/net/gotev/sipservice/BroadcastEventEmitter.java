@@ -205,9 +205,18 @@ public class BroadcastEventEmitter implements SipServiceConstants {
         sendBroadcast(intent);
     }
 
-    void callStats(int callID, int duration, String audioCodec, int callStateStatus, RtpStreamStats rx, RtpStreamStats tx) {
+    void callStats(
+            String accountID,
+            int callID,
+            int duration,
+            String audioCodec,
+            int callStateStatus,
+            RtpStreamStats rx,
+            RtpStreamStats tx
+    ) {
         final Intent intent = new Intent()
             .setAction(getAction(BroadcastAction.CALL_STATS))
+            .putExtra(PARAM_ACCOUNT_ID, accountID)
             .putExtra(PARAM_CALL_ID, callID)
             .putExtra(PARAM_CALL_STATS_DURATION, duration)
             .putExtra(PARAM_CALL_STATS_AUDIO_CODEC, audioCodec)
@@ -215,6 +224,18 @@ public class BroadcastEventEmitter implements SipServiceConstants {
             .putExtra(PARAM_CALL_STATS_RX_STREAM, rx)
             .putExtra(PARAM_CALL_STATS_TX_STREAM, tx);
         sendBroadcast(intent);
+    }
+
+    /** Backward-compatible overload for clients that do not track account identity. */
+    void callStats(
+            int callID,
+            int duration,
+            String audioCodec,
+            int callStateStatus,
+            RtpStreamStats rx,
+            RtpStreamStats tx
+    ) {
+        callStats(null, callID, duration, audioCodec, callStateStatus, rx, tx);
     }
 
     void callReconnectionState(CallReconnectionState state) {

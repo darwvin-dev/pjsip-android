@@ -83,8 +83,9 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
                     intent.getIntExtra(PARAM_INCOMING_VIDEO_HEIGHT, H264_DEF_HEIGHT));
 
         } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.CALL_STATS).equals(action)) {
-            int callStatus = intent.getIntExtra(PARAM_CALL_STATUS, -1);
+            int callStatus = intent.getIntExtra(PARAM_CALL_STATS_CALL_STATUS, -1);
             onCallStats(
+                intent.getStringExtra(PARAM_ACCOUNT_ID),
                 intent.getIntExtra(PARAM_CALL_ID, -1),
                 intent.getIntExtra(PARAM_CALL_STATS_DURATION, 0),
                 intent.getStringExtra(PARAM_CALL_STATS_AUDIO_CODEC), callStatus,
@@ -315,7 +316,27 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
         Logger.debug(LOG_TAG, "Video resolution " + width+"x"+height);
     }
 
-    protected void onCallStats(int callID, int duration, String audioCodec, int callStatusCode, RtpStreamStats rx, RtpStreamStats tx) {
+    protected void onCallStats(
+            String accountID,
+            int callID,
+            int duration,
+            String audioCodec,
+            int callStatusCode,
+            RtpStreamStats rx,
+            RtpStreamStats tx
+    ) {
+        onCallStats(callID, duration, audioCodec, callStatusCode, rx, tx);
+    }
+
+    /** Backward-compatible callback. */
+    protected void onCallStats(
+            int callID,
+            int duration,
+            String audioCodec,
+            int callStatusCode,
+            RtpStreamStats rx,
+            RtpStreamStats tx
+    ) {
         Logger.debug(LOG_TAG, "Call Stats sent "+duration+" "+audioCodec);
     }
 

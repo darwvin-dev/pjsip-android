@@ -40,6 +40,8 @@ public interface SipServiceConstants {
     String ACTION_STOP_CALL_RECORDING = "stopCallRecording";
     String ACTION_CONNECT_CONFERENCE = "connectConference";
     String ACTION_DISCONNECT_CONFERENCE = "disconnectConference";
+    String ACTION_SUBSCRIBE_BUDDY = "subscribeBuddy";
+    String ACTION_UNSUBSCRIBE_BUDDY = "unsubscribeBuddy";
 
     /*
      * Generic Parameters
@@ -74,6 +76,15 @@ public interface SipServiceConstants {
     String PARAM_PEER_CALL_ID = "peerCallId";
     String PARAM_FEATURE_ENABLED = "featureEnabled";
     String PARAM_ERROR_MESSAGE = "errorMessage";
+    String PARAM_BUDDY_URI = "buddyUri";
+    String PARAM_BUDDY_DIALOG_EVENT = "buddyDialogEvent";
+    String PARAM_PRESENCE_STATUS = "presenceStatus";
+    String PARAM_PRESENCE_TEXT = "presenceText";
+    String PARAM_PRESENCE_NOTE = "presenceNote";
+    String PARAM_SUBSCRIPTION_STATE = "subscriptionState";
+    String PARAM_SUBSCRIPTION_CODE = "subscriptionCode";
+    String PARAM_SUBSCRIPTION_REASON = "subscriptionReason";
+    String PARAM_BLF_STATE = "blfState";
 
     /**
      * Specific Parameters passed in the broadcast intents.

@@ -88,7 +88,10 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
                 intent.getStringExtra(PARAM_ACCOUNT_ID),
                 intent.getIntExtra(PARAM_CALL_ID, -1),
                 intent.getIntExtra(PARAM_CALL_STATS_DURATION, 0),
-                intent.getStringExtra(PARAM_CALL_STATS_AUDIO_CODEC), callStatus,
+                intent.getStringExtra(PARAM_CALL_STATS_AUDIO_CODEC),
+                callStatus,
+                intent.getIntExtra(PARAM_CALL_STATS_MEDIA_PROTO, 0),
+                intent.getStringExtra(PARAM_CALL_STATS_REMOTE_RTP),
                 intent.getParcelableExtra(PARAM_CALL_STATS_RX_STREAM),
                 intent.getParcelableExtra(PARAM_CALL_STATS_TX_STREAM));
 
@@ -314,6 +317,20 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
 
     protected void onVideoSize(int width, int height) {
         Logger.debug(LOG_TAG, "Video resolution " + width+"x"+height);
+    }
+
+    protected void onCallStats(
+            String accountID,
+            int callID,
+            int duration,
+            String audioCodec,
+            int callStatusCode,
+            int mediaProto,
+            String remoteRtpAddress,
+            RtpStreamStats rx,
+            RtpStreamStats tx
+    ) {
+        onCallStats(accountID, callID, duration, audioCodec, callStatusCode, rx, tx);
     }
 
     protected void onCallStats(

@@ -190,6 +190,9 @@ public class SipService extends BackgroundService implements SipServiceConstants
                 case ACTION_SET_DND:
                     handleSetDND(intent);
                     break;
+                case ACTION_SET_PRESENCE:
+                    handleSetPresence(intent);
+                    break;
                 case ACTION_SET_INCOMING_VIDEO:
                     handleSetIncomingVideoFeed(intent);
                     break;
@@ -1060,6 +1063,32 @@ public class SipService extends BackgroundService implements SipServiceConstants
             mBroadcastEmitter.registrationState(accountID, account.getInfo().getRegStatus());
         } catch (Exception exc) {
             Logger.error(TAG, "Error while getting registration status for " + getValue(getApplicationContext(), accountID), exc);
+        }
+    }
+
+    private void handleSetPresence(Intent intent) {
+        String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+        SipAccount account = mActiveSipAccounts.get(accountID);
+        if (account == null) {
+            Logger.warning(TAG, "Presence update ignored: SIP account is not active");
+            return;
+        }
+
+        org.pjsip.pjsua2.PresenceStatus status = new org.pjsip.pjsua2.PresenceStatus();
+        try {
+            status.setStatus(intent.getIntExtra(
+                    PARAM_PRESENCE_STATUS,
+                    org.pjsip.pjsua2.pjsua_buddy_status.PJSUA_BUDDY_STATUS_ONLINE));
+            status.setActivity(intent.getIntExtra(
+                    PARAM_PRESENCE_ACTIVITY,
+                    org.pjsip.pjsua2.pjrpid_activity.PJRPID_ACTIVITY_UNKNOWN));
+            status.setStatusText(intent.getStringExtra(PARAM_PRESENCE_TEXT));
+            status.setNote(intent.getStringExtra(PARAM_PRESENCE_NOTE));
+            account.setOnlineStatus(status);
+        } catch (Exception error) {
+            Logger.error(TAG, "Unable to publish SIP presence", error);
+        } finally {
+            status.delete();
         }
     }
 

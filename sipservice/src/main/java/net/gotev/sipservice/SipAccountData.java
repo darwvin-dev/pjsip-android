@@ -318,6 +318,12 @@ public class SipAccountData implements Parcelable {
         accountConfig.getSipConfig().getAuthCreds().add(getAuthCredInfo());
         accountConfig.getSipConfig().getProxies().add(getProxyUri());
 
+        // DarwPhone enables standard PBX integrations by default. Unsupported servers simply
+        // reject the optional SUBSCRIBE/PUBLISH transactions without affecting registration.
+        accountConfig.getMwiConfig().setEnabled(true);
+        accountConfig.getPresConfig().setPublishEnabled(true);
+        accountConfig.getPresConfig().setPublishQueue(true);
+
         // NAT configs
         String sipInst = getValidSipInstance();
         if (sipInst != null && !sipInst.isEmpty()) {

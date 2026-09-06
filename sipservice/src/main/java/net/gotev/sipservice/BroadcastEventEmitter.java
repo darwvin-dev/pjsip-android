@@ -211,6 +211,8 @@ public class BroadcastEventEmitter implements SipServiceConstants {
             int duration,
             String audioCodec,
             int callStateStatus,
+            int mediaProto,
+            String remoteRtpAddress,
             RtpStreamStats rx,
             RtpStreamStats tx
     ) {
@@ -221,9 +223,32 @@ public class BroadcastEventEmitter implements SipServiceConstants {
             .putExtra(PARAM_CALL_STATS_DURATION, duration)
             .putExtra(PARAM_CALL_STATS_AUDIO_CODEC, audioCodec)
             .putExtra(PARAM_CALL_STATS_CALL_STATUS, callStateStatus)
+            .putExtra(PARAM_CALL_STATS_MEDIA_PROTO, mediaProto)
+            .putExtra(PARAM_CALL_STATS_REMOTE_RTP, remoteRtpAddress)
             .putExtra(PARAM_CALL_STATS_RX_STREAM, rx)
             .putExtra(PARAM_CALL_STATS_TX_STREAM, tx);
         sendBroadcast(intent);
+    }
+
+    void callStats(
+            String accountID,
+            int callID,
+            int duration,
+            String audioCodec,
+            int callStateStatus,
+            RtpStreamStats rx,
+            RtpStreamStats tx
+    ) {
+        callStats(
+                accountID,
+                callID,
+                duration,
+                audioCodec,
+                callStateStatus,
+                0,
+                "",
+                rx,
+                tx);
     }
 
     /** Backward-compatible overload for clients that do not track account identity. */

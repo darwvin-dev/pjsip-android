@@ -283,15 +283,30 @@ public class SipService extends BackgroundService implements SipServiceConstants
         String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
         int callID = intent.getIntExtra(PARAM_CALL_ID, 0);
         String dtmf = intent.getStringExtra(PARAM_DTMF);
+        int method = intent.getIntExtra(
+                PARAM_DTMF_METHOD,
+                org.pjsip.pjsua2.pjsua_dtmf_method.PJSUA_DTMF_METHOD_RFC2833);
 
         SipCall sipCall = getCall(accountID, callID);
         if (sipCall != null) {
              try {
-                sipCall.dialDtmf(dtmf);
+                if (method == org.pjsip.pjsua2.pjsua_dtmf_method.PJSUA_DTMF_METHOD_RFC2833) {
+                    sipCall.dialDtmf(dtmf);
+                } else {
+                    org.pjsip.pjsua2.CallSendDtmfParam param =
+                            new org.pjsip.pjsua2.CallSendDtmfParam();
+                    try {
+                        param.setMethod(method);
+                        param.setDigits(dtmf);
+                        sipCall.sendDtmf(param);
+                    } finally {
+                        param.delete();
+                    }
+                }
             } catch (Exception exc) {
-                 // DTMF digits can carry PINs / calling-card numbers / IVR passwords — mask them
+                 // DTMF digits can carry PINs / calling-card numbers / IVR passwords — never log them.
                  Logger.error(TAG,
-                         "Error while dialing dtmf: " + getValue(getApplicationContext(), dtmf) + ". AccountID: "
+                         "Error while sending DTMF. AccountID: "
                          + getValue(getApplicationContext(), accountID) + ", CallID: " + callID);
              }
         }

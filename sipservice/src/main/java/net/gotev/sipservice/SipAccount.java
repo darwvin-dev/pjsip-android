@@ -150,7 +150,7 @@ public class SipAccount extends Account {
             String wholeMsg = rdata != null ? rdata.getWholeMsg() : null;
             VoicemailStatus status = VoicemailStatus.parse(wholeMsg);
             Logger.info(LOG_TAG, "Received MWI info - " + status);
-            service.getBroadcastEmitter().voicemailWaiting(status);
+            service.getBroadcastEmitter().voicemailWaiting(data.getIdUri(), status);
         } catch (Exception ex) {
             Logger.error(LOG_TAG, "Error while handling MWI info", ex);
         }

@@ -6,6 +6,7 @@ on:
       - hardening/darwphone-video-lifecycle
     paths:
       - "sipservice/src/main/java/**"
+      - "sipservice/src/test/java/**"
       - "sipservice/build.gradle"
       - "build.gradle"
       - "settings.gradle"
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths:
       - "sipservice/src/main/java/**"
+      - "sipservice/src/test/java/**"
       - "sipservice/build.gradle"
       - "build.gradle"
       - "settings.gradle"

@@ -977,7 +977,7 @@ public class SipService extends BackgroundService implements SipServiceConstants
                     // push token is refreshed for one account.
                     boolean replaced = false;
                     for (int i = 0; i < mConfiguredAccounts.size(); i++) {
-                        if (mConfiguredAccounts.get(i).getIdUri().equals(accountID)) {
+                        if (mConfiguredAccounts.get(i).getAccountId().equals(accountID)) {
                             mConfiguredAccounts.set(i, sipAccount.getData());
                             replaced = true;
                             break;
@@ -1018,7 +1018,7 @@ public class SipService extends BackgroundService implements SipServiceConstants
             SipAccountData data = iterator.next();
 
             try {
-                removeAccount(data.getIdUri());
+                removeAccount(data.getAccountId());
                 iterator.remove();
             } catch (Exception exc) {
                 Logger.error(TAG, "Error while removing account " + getValue(getApplicationContext(), data.getIdUri()), exc);
@@ -1038,7 +1038,7 @@ public class SipService extends BackgroundService implements SipServiceConstants
         while (iterator.hasNext()) {
             SipAccountData data = iterator.next();
 
-            if (data.getIdUri().equals(accountIDtoRemove)) {
+            if (data.getAccountId().equals(accountIDtoRemove)) {
                 try {
                     removeAccount(accountIDtoRemove);
                     iterator.remove();
@@ -1053,10 +1053,18 @@ public class SipService extends BackgroundService implements SipServiceConstants
 
     private void handleSetAccount(Intent intent) {
         SipAccountData data = intent.getParcelableExtra(PARAM_ACCOUNT_DATA);
+        if (data == null) return;
 
-        int index = mConfiguredAccounts.indexOf(data);
+        String accountID = data.getAccountId();
+        int index = -1;
+        for (int i = 0; i < mConfiguredAccounts.size(); i++) {
+            if (mConfiguredAccounts.get(i).getAccountId().equals(accountID)) {
+                index = i;
+                break;
+            }
+        }
+
         if (index == -1) {
-            handleResetAccounts();
             Logger.debug(TAG, "Adding " + getValue(getApplicationContext(), data.getIdUri()));
 
             try {
@@ -1071,7 +1079,6 @@ public class SipService extends BackgroundService implements SipServiceConstants
             Logger.debug(TAG, "Reconfiguring " + getValue(getApplicationContext(), data.getIdUri()));
 
             try {
-                //removeAccount(data.getIdUri());
                 handleSetCodecPriorities(intent);
                 addAccount(data);
                 mConfiguredAccounts.set(index, data);
@@ -1448,7 +1455,7 @@ public class SipService extends BackgroundService implements SipServiceConstants
      * @param account SIP account to add
      */
     private void addAccount(SipAccountData account) throws Exception {
-        String accountString = account.getIdUri();
+        String accountString = account.getAccountId();
 
         SipAccount sipAccount = mActiveSipAccounts.get(accountString);
 

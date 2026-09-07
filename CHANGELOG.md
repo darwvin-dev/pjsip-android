@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+### DarwPhone native runtime refresh
+
+_2026-09-07_
+* Rebuilt bundled PJSUA2 native libraries from PJSIP 2.17.
+* Built with the upstream Android builder's 16KB page-size support enabled.
+* Removed bcg729/G.729 from the native build so the unused GPLv3-only codec is not linked into DarwPhone.
+
+
 ### Version 2.18.0
 
 _2026-07-21_

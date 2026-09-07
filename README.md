@@ -67,7 +67,7 @@ Native PJSIP library for Android is compiled using [PJSIP Android Builder](https
 
 ### Used Libraries versions
 
-- PJSIP: 2.16
+- PJSIP: 2.17
 - OpenSSL: 3.5.5
 - OpenH264: 2.6.0
 - Opus: 1.6.1

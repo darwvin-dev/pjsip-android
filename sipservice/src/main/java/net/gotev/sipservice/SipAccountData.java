@@ -43,6 +43,8 @@ public class SipAccountData implements Parcelable {
     private String authorizationUsername;
     private String outboundProxy;
     private String displayName;
+    /** Stable app-owned identifier used only for routing; never emitted as SIP identity. */
+    private String accountId;
 
     public SipAccountData() { }
 
@@ -80,6 +82,7 @@ public class SipAccountData implements Parcelable {
         parcel.writeString(authorizationUsername);
         parcel.writeString(outboundProxy);
         parcel.writeString(displayName);
+        parcel.writeString(accountId);
     }
 
     private SipAccountData(Parcel in) {
@@ -101,6 +104,7 @@ public class SipAccountData implements Parcelable {
         authorizationUsername = in.readString();
         outboundProxy = in.readString();
         displayName = in.readString();
+        accountId = in.readString();
     }
 
     @Override
@@ -282,6 +286,23 @@ public class SipAccountData implements Parcelable {
         this.displayName = displayName;
         return this;
     }
+
+    /**
+     * Stable app-owned account identifier. This is intentionally independent from the SIP AOR,
+     * allowing two accounts with the same user@realm but different registrar/proxy settings.
+     */
+    public SipAccountData setAccountId(String accountId) {
+        this.accountId = accountId == null ? null : accountId.trim();
+        return this;
+    }
+
+    public String getAccountId() {
+        if (accountId == null || accountId.trim().isEmpty()) {
+            // Backward compatibility for persisted configurations created before stable IDs.
+            return getIdUri();
+        }
+        return accountId;
+    }
     /*          Getters and Setters end        */
 
     /*****          Utilities        ******/
@@ -446,6 +467,7 @@ public class SipAccountData implements Parcelable {
         if (!Objects.equals(authorizationUsername, that.authorizationUsername)) return false;
         if (!Objects.equals(outboundProxy, that.outboundProxy)) return false;
         if (!Objects.equals(displayName, that.displayName)) return false;
+        if (!Objects.equals(getAccountId(), that.getAccountId())) return false;
 
         return getIdUri().equals(that.getIdUri());
 
@@ -469,6 +491,7 @@ public class SipAccountData implements Parcelable {
         result = 31 * result + (authorizationUsername == null ? 0 : authorizationUsername.hashCode());
         result = 31 * result + (outboundProxy == null ? 0 : outboundProxy.hashCode());
         result = 31 * result + (displayName == null ? 0 : displayName.hashCode());
+        result = 31 * result + getAccountId().hashCode();
         return result;
     }
 

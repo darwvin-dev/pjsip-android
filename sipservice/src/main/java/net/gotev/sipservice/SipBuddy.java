@@ -123,7 +123,7 @@ final class SipBuddy extends Buddy {
                 String text = presence == null ? "" : safe(presence.getStatusText());
                 String note = presence == null ? "" : safe(presence.getNote());
                 account.getService().getBroadcastEmitter().presenceState(
-                        account.getData().getIdUri(),
+                        account.getData().getAccountId(),
                         uri,
                         status,
                         text,
@@ -163,7 +163,7 @@ final class SipBuddy extends Buddy {
 
     private void emitDialogState(String state) {
         account.getService().getBroadcastEmitter().blfState(
-                account.getData().getIdUri(),
+                account.getData().getAccountId(),
                 uri,
                 state == null ? "unknown" : state);
     }

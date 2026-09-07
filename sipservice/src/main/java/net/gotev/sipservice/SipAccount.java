@@ -80,7 +80,7 @@ public class SipAccount extends Account {
         SipCall call = new SipCall(this, callId);
         activeCalls.put(callId, call);
         Logger.debug(LOG_TAG, "Added incoming call with ID " + callId
-                + " to " + getValue(service.getApplicationContext(), data.getIdUri())
+                + " to " + getValue(service.getApplicationContext(), data.getAccountId())
         );
         return call;
     }
@@ -141,7 +141,7 @@ public class SipAccount extends Account {
         Logger.info(LOG_TAG, "Sip Reg Info - Code: " + prm.getCode() +
                 ", Reason: " + prm.getReason() + ", Exp: " + prm.getExpiration() + ", Status: " + prm.getStatus()
         );
-        service.getBroadcastEmitter().registrationState(data.getIdUri(), prm.getCode());
+        service.getBroadcastEmitter().registrationState(data.getAccountId(), prm.getCode());
     }
 
     @Override
@@ -153,7 +153,7 @@ public class SipAccount extends Account {
             String wholeMsg = rdata != null ? rdata.getWholeMsg() : null;
             VoicemailStatus status = VoicemailStatus.parse(wholeMsg);
             Logger.info(LOG_TAG, "Received MWI info - " + status);
-            service.getBroadcastEmitter().voicemailWaiting(data.getIdUri(), status);
+            service.getBroadcastEmitter().voicemailWaiting(data.getAccountId(), status);
         } catch (Exception ex) {
             Logger.error(LOG_TAG, "Error while handling MWI info", ex);
         }
@@ -205,7 +205,7 @@ public class SipAccount extends Account {
             CallInfo callInfo = call.getInfo();
             boolean isVideo = (callInfo.getRemOfferer() && callInfo.getRemVideoCount() > 0);
 
-            service.getBroadcastEmitter().incomingCall(data.getIdUri(), prm.getCallId(),
+            service.getBroadcastEmitter().incomingCall(data.getAccountId(), prm.getCallId(),
                             displayName, remoteUri, isVideo);
 
         } catch (Exception ex) {
@@ -216,7 +216,7 @@ public class SipAccount extends Account {
     public void onInstantMessage(OnInstantMessageParam prm) {
         super.onInstantMessage(prm);
         service.getBroadcastEmitter().instantMessageReceived(
-                data.getIdUri(),
+                data.getAccountId(),
                 prm.getFromUri(),
                 prm.getToUri(),
                 prm.getContentType(),
@@ -227,7 +227,7 @@ public class SipAccount extends Account {
     public void onInstantMessageStatus(OnInstantMessageStatusParam prm) {
         super.onInstantMessageStatus(prm);
         service.getBroadcastEmitter().instantMessageStatus(
-                data.getIdUri(),
+                data.getAccountId(),
                 prm.getToUri(),
                 prm.getMsgBody(),
                 prm.getCode(),
@@ -238,7 +238,7 @@ public class SipAccount extends Account {
     public void onTypingIndication(OnTypingIndicationParam prm) {
         super.onTypingIndication(prm);
         service.getBroadcastEmitter().typingIndication(
-                data.getIdUri(),
+                data.getAccountId(),
                 prm.getFromUri(),
                 prm.getIsTyping());
     }

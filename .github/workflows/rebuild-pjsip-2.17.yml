@@ -1,0 +1,106 @@
+name: Rebuild PJSIP 2.17
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - hardening/darwphone-video-lifecycle
+    paths:
+      - .github/workflows/rebuild-pjsip-2.17.yml
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout wrapper fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare upstream builder
+        run: |
+          git clone --depth 1 https://github.com/VoiSmart/pjsip-android-builder.git "$RUNNER_TEMP/pjsip-builder"
+          sed -i 's/^PJSIP_VERSION=.*/PJSIP_VERSION=2.17/' "$RUNNER_TEMP/pjsip-builder/config.conf"
+          grep '^PJSIP_VERSION=' "$RUNNER_TEMP/pjsip-builder/config.conf"
+          grep '^ENABLE_16KB_PAGE_SIZE=' "$RUNNER_TEMP/pjsip-builder/config.conf"
+
+      - name: Build PJSIP 2.17 for all Android ABIs
+        run: |
+          docker run --rm \
+            -v "$RUNNER_TEMP/pjsip-builder:/home" \
+            ubuntu:22.04 \
+            bash -lc 'cd /home && chmod +x prepare-build-system build && ./prepare-build-system && ./build'
+
+      - name: Install rebuilt bindings and native libraries
+        run: |
+          OUT="$RUNNER_TEMP/pjsip-builder/output/pjsip-build-output"
+          test -d "$OUT/java/org/pjsip"
+          for ABI in arm64-v8a armeabi-v7a x86 x86_64; do
+            test -f "$OUT/lib/$ABI/libpjsua2.so"
+            test -f "$OUT/lib/$ABI/libopenh264.so"
+          done
+
+          rm -rf sipservice/src/main/java/org/pjsip
+          cp -R "$OUT/java/org/pjsip" sipservice/src/main/java/org/
+
+          rm -rf sipservice/src/main/jniLibs
+          mkdir -p sipservice/src/main/jniLibs
+          for ABI in arm64-v8a armeabi-v7a x86 x86_64; do
+            mkdir -p "sipservice/src/main/jniLibs/$ABI"
+            cp "$OUT/lib/$ABI/"*.so "sipservice/src/main/jniLibs/$ABI/"
+          done
+
+      - name: Verify native ELF page alignment
+        run: |
+          READELF="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          test -x "$READELF"
+          find sipservice/src/main/jniLibs -name '*.so' -print0 | while IFS= read -r -d '' SO; do
+            echo "Checking $SO"
+            "$READELF" -lW "$SO" | awk '
+              $1 == "LOAD" {
+                align=$NF
+                if (align ~ /^0x/) {
+                  value=strtonum(align)
+                  if (value < 16384) {
+                    print "LOAD alignment below 16KB:", align
+                    bad=1
+                  }
+                }
+              }
+              END { exit bad ? 1 : 0 }
+            '
+          done
+
+      - name: Record native runtime version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("README.md")
+          text = p.read_text()
+          text = text.replace("- PJSIP: 2.16", "- PJSIP: 2.17")
+          p.write_text(text)
+
+          c = Path("CHANGELOG.md")
+          text = c.read_text()
+          marker = "Change Log\n==========\n"
+          entry = """\n### DarwPhone native runtime refresh\n\n_2026-09-07_\n* Rebuilt bundled PJSUA2 native libraries from PJSIP 2.17.\n* Built with the upstream Android builder's 16KB page-size support enabled.\n\n"""
+          if entry.strip() not in text:
+              text = text.replace(marker, marker + entry, 1)
+              c.write_text(text)
+          PY
+
+      - name: Commit rebuilt runtime
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sipservice/src/main/java/org/pjsip sipservice/src/main/jniLibs README.md CHANGELOG.md
+          git commit -m "build: rebuild native runtime with PJSIP 2.17"
+          git push origin HEAD:hardening/darwphone-video-lifecycle

@@ -733,7 +733,11 @@ public class SipService extends BackgroundService implements SipServiceConstants
             Bundle bundle = intent.getExtras();
             if (bundle != null) {
                 Surface surface = bundle.getParcelable(PARAM_SURFACE);
-                sipCall.setIncomingVideoFeed(surface);
+                if (surface == null) {
+                    sipCall.stopIncomingVideoFeed();
+                } else {
+                    sipCall.setIncomingVideoFeed(surface);
+                }
             }
         }
     }

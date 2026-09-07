@@ -103,6 +103,10 @@ public interface SipServiceConstants {
      * Specific Parameters passed in the broadcast intents.
      */
     String PARAM_REGISTRATION_CODE = "registrationCode";
+    String PARAM_PUSH_CAPABILITY_CHECKED = "pushCapabilityChecked";
+    String PARAM_PUSH_SUPPORTED = "pushSupported";
+    String PARAM_PUSH_PROVIDER = "pushProvider";
+    String PARAM_PUSH_REGISTRATION_SECONDS = "pushRegistrationSeconds";
     String PARAM_REMOTE_URI = "remoteUri";
     String PARAM_DISPLAY_NAME = "displayName";
     String PARAM_CALL_STATE = "callState";

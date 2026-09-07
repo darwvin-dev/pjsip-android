@@ -32,7 +32,15 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
 
         if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.REGISTRATION).equals(action)) {
             int stateCode = intent.getIntExtra(PARAM_REGISTRATION_CODE, -1);
-            onRegistration(intent.getStringExtra(PARAM_ACCOUNT_ID), stateCode);
+            String accountID = intent.getStringExtra(PARAM_ACCOUNT_ID);
+            onRegistration(accountID, stateCode);
+            onRegistrationPushCapability(
+                    accountID,
+                    stateCode,
+                    intent.getBooleanExtra(PARAM_PUSH_CAPABILITY_CHECKED, false),
+                    intent.getBooleanExtra(PARAM_PUSH_SUPPORTED, false),
+                    intent.getStringExtra(PARAM_PUSH_PROVIDER),
+                    intent.getIntExtra(PARAM_PUSH_REGISTRATION_SECONDS, 0));
 
         } else if (BroadcastEventEmitter.getAction(BroadcastEventEmitter.BroadcastAction.INCOMING_CALL).equals(action)) {
             onIncomingCall(intent.getStringExtra(PARAM_ACCOUNT_ID),
@@ -253,6 +261,22 @@ public class BroadcastEventReceiver extends BroadcastReceiver implements SipServ
     public void onRegistration(String accountID, int registrationStateCode) {
         Logger.debug(LOG_TAG, "onRegistration - accountID: " + getValue(getReceiverContext(), accountID) +
                 ", registrationStateCode: " + registrationStateCode);
+    }
+
+    public void onRegistrationPushCapability(
+            String accountID,
+            int registrationStateCode,
+            boolean checked,
+            boolean supported,
+            String provider,
+            int refreshBeforeExpirySeconds
+    ) {
+        Logger.debug(LOG_TAG, "RFC8599 capability - accountID: " +
+                getValue(getReceiverContext(), accountID) +
+                ", checked: " + checked +
+                ", supported: " + supported +
+                ", provider: " + provider +
+                ", refreshBeforeExpirySeconds: " + refreshBeforeExpirySeconds);
     }
 
     public void onIncomingCall(String accountID, int callID, String displayName, String remoteUri, boolean isVideo) {

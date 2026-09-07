@@ -42,7 +42,7 @@ public class SipServiceCommand implements SipServiceConstants {
             throw new IllegalArgumentException("sipAccount MUST not be null!");
         }
 
-        String accountID = sipAccount.getIdUri();
+        String accountID = sipAccount.getAccountId();
         checkAccount(accountID);
 
         Intent intent = new Intent(context, SipService.class);

@@ -649,6 +649,22 @@ public class SipServiceCommand implements SipServiceConstants {
     }
 
     /**
+     * Detaches the Android Surface from the remote video window without ending the call.
+     * Use this when a SurfaceView is destroyed during rotation/navigation so native code never
+     * retains a stale Surface.
+     */
+    public static void clearIncomingVideoFeed(Context context, String accountID, int callID) {
+        checkAccount(accountID);
+
+        Intent intent = new Intent(context, SipService.class);
+        intent.setAction(ACTION_SET_INCOMING_VIDEO);
+        intent.putExtra(PARAM_ACCOUNT_ID, accountID);
+        intent.putExtra(PARAM_CALL_ID, callID);
+        intent.putExtra(PARAM_SURFACE, (Surface) null);
+        context.startService(intent);
+    }
+
+    /**
      * Mutes and Un-Mutes video for a call. If the call does not exist or has been terminated, a disconnected
      * state will be sent to
      * {@link BroadcastEventReceiver#onCallState(String, int, int, int, long)}

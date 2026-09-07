@@ -14,6 +14,8 @@ import org.pjsip.pjsua2.pjsip_status_code;
 
 import java.util.HashMap;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static net.gotev.sipservice.ObfuscationHelper.getValue;
 
@@ -24,6 +26,12 @@ import static net.gotev.sipservice.ObfuscationHelper.getValue;
 public class SipAccount extends Account {
 
     private static final String LOG_TAG = SipAccount.class.getSimpleName();
+    private static final Pattern PUSH_PROVIDER_CAP = Pattern.compile(
+            "\\+sip\\.pns\\s*=\\s*\\\"?([^\\\";,\\s]+)",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern PUSH_REG_CAP = Pattern.compile(
+            "\\+sip\\.pnsreg\\s*=\\s*\\\"?([0-9]+)",
+            Pattern.CASE_INSENSITIVE);
 
     private final HashMap<Integer, SipCall> activeCalls = new HashMap<>();
     private final SipAccountData data;
@@ -141,7 +149,46 @@ public class SipAccount extends Account {
         Logger.info(LOG_TAG, "Sip Reg Info - Code: " + prm.getCode() +
                 ", Reason: " + prm.getReason() + ", Exp: " + prm.getExpiration() + ", Status: " + prm.getStatus()
         );
-        service.getBroadcastEmitter().registrationState(data.getAccountId(), prm.getCode());
+
+        int code = prm.getCode();
+        String wholeMessage = null;
+        try {
+            SipRxData rdata = prm.getRdata();
+            wholeMessage = rdata == null ? null : rdata.getWholeMsg();
+        } catch (Exception error) {
+            Logger.warning(LOG_TAG, "Unable to inspect REGISTER response Feature-Caps");
+        }
+
+        boolean checked = (code >= 200 && code < 300) || code == 555;
+        String provider = extractCapability(PUSH_PROVIDER_CAP, wholeMessage);
+        boolean supported = code >= 200 && code < 300 &&
+                provider != null && "fcm".equalsIgnoreCase(provider);
+        int refreshBeforeExpirySeconds = parsePositiveInt(
+                extractCapability(PUSH_REG_CAP, wholeMessage));
+
+        service.getBroadcastEmitter().registrationState(
+                data.getAccountId(),
+                code,
+                checked,
+                supported,
+                provider,
+                refreshBeforeExpirySeconds);
+    }
+
+    private static String extractCapability(Pattern pattern, String wholeMessage) {
+        if (wholeMessage == null || wholeMessage.isEmpty()) return null;
+        Matcher matcher = pattern.matcher(wholeMessage);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    private static int parsePositiveInt(String value) {
+        if (value == null || value.isEmpty()) return 0;
+        try {
+            int parsed = Integer.parseInt(value);
+            return Math.max(parsed, 0);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
     }
 
     @Override

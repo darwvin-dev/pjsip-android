@@ -1,6 +1,7 @@
 package net.gotev.sipservice;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ public class SipTlsUtilsTest {
         certNames.add("test.com");
         certNames.add("t.test.com");
         certNames.add("cert.test.com");
-        assert SipTlsUtils.isWildcardValid(certNames, host);
+        assertTrue(SipTlsUtils.isWildcardValid(certNames, host));
     }
 
     @Test

@@ -25,8 +25,11 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/VoiSmart/pjsip-android-builder.git "$RUNNER_TEMP/pjsip-builder"
           sed -i 's/^PJSIP_VERSION=.*/PJSIP_VERSION=2.17/' "$RUNNER_TEMP/pjsip-builder/config.conf"
+          sed -i 's/^DOWNLOAD_BCG729=.*/DOWNLOAD_BCG729=0/' "$RUNNER_TEMP/pjsip-builder/config.conf"
+          sed -i 's/^ENABLE_BCG729=.*/ENABLE_BCG729=0/' "$RUNNER_TEMP/pjsip-builder/config.conf"
           grep '^PJSIP_VERSION=' "$RUNNER_TEMP/pjsip-builder/config.conf"
           grep '^ENABLE_16KB_PAGE_SIZE=' "$RUNNER_TEMP/pjsip-builder/config.conf"
+          grep '^ENABLE_BCG729=' "$RUNNER_TEMP/pjsip-builder/config.conf"
 
       - name: Build PJSIP 2.17 for all Android ABIs
         run: |
@@ -87,7 +90,8 @@ jobs:
           c = Path("CHANGELOG.md")
           text = c.read_text()
           marker = "Change Log\n==========\n"
-          entry = """\n### DarwPhone native runtime refresh\n\n_2026-09-07_\n* Rebuilt bundled PJSUA2 native libraries from PJSIP 2.17.\n* Built with the upstream Android builder's 16KB page-size support enabled.\n\n"""
+          entry = """\n### DarwPhone native runtime refresh\n\n_2026-09-07_\n* Rebuilt bundled PJSUA2 native libraries from PJSIP 2.17.\n* Built with the upstream Android builder's 16KB page-size support enabled.
+* Removed bcg729/G.729 from the native build so the unused GPLv3-only codec is not linked into DarwPhone.\n\n"""
           if entry.strip() not in text:
               text = text.replace(marker, marker + entry, 1)
               c.write_text(text)

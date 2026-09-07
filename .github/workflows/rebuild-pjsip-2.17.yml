@@ -61,8 +61,10 @@ jobs:
         run: |
           READELF="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
           test -x "$READELF"
-          find sipservice/src/main/jniLibs -name '*.so' -print0 | while IFS= read -r -d '' SO; do
-            echo "Checking $SO"
+          for ABI in arm64-v8a x86_64; do
+            find "sipservice/src/main/jniLibs/$ABI" -name '*.so' -print0
+          done | while IFS= read -r -d '' SO; do
+            echo "Checking 64-bit ELF alignment: $SO"
             "$READELF" -lW "$SO" | awk '
               $1 == "LOAD" {
                 align=$NF
@@ -78,6 +80,22 @@ jobs:
             '
           done
 
+      - name: Verify bcg729 is excluded
+        run: |
+          CONFIG="$RUNNER_TEMP/pjsip-builder/tools/pjproject-2.17/pjlib/include/pj/config_site.h"
+          if grep -q 'PJMEDIA_HAS_BCG729 1' "$CONFIG"; then
+            echo "bcg729 unexpectedly enabled in PJSIP config" >&2
+            exit 1
+          fi
+          NM="$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm"
+          for SO in sipservice/src/main/jniLibs/arm64-v8a/libpjsua2.so sipservice/src/main/jniLibs/x86_64/libpjsua2.so; do
+            if "$NM" -a "$SO" 2>/dev/null | grep -qi 'bcg729'; then
+              echo "bcg729 symbol found in $SO" >&2
+              exit 1
+            fi
+          done
+          echo "bcg729 is disabled and no bcg729 symbols were found in 64-bit PJSUA2."
+
       - name: Record native runtime version
         run: |
           python3 - <<'PY'
@@ -90,8 +108,7 @@ jobs:
           c = Path("CHANGELOG.md")
           text = c.read_text()
           marker = "Change Log\n==========\n"
-          entry = """\n### DarwPhone native runtime refresh\n\n_2026-09-07_\n* Rebuilt bundled PJSUA2 native libraries from PJSIP 2.17.\n* Built with the upstream Android builder's 16KB page-size support enabled.
-* Removed bcg729/G.729 from the native build so the unused GPLv3-only codec is not linked into DarwPhone.\n\n"""
+          entry = """\n### DarwPhone native runtime refresh\n\n_2026-09-07_\n* Rebuilt bundled PJSUA2 native libraries from PJSIP 2.17.\n* Built with the upstream Android builder's 16KB page-size support enabled.\n* Removed bcg729/G.729 from the native build so the unused GPLv3-only codec is not linked into DarwPhone.\n\n"""
           if entry.strip() not in text:
               text = text.replace(marker, marker + entry, 1)
               c.write_text(text)

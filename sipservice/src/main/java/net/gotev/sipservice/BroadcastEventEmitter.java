@@ -83,11 +83,26 @@ public class BroadcastEventEmitter implements SipServiceConstants {
      * @param registrationStateCode SIP registration status code
      */
     public void registrationState(String accountID, int registrationStateCode) {
+        registrationState(accountID, registrationStateCode, false, false, null, 0);
+    }
+
+    public void registrationState(
+            String accountID,
+            int registrationStateCode,
+            boolean pushCapabilityChecked,
+            boolean pushSupported,
+            String pushProvider,
+            int pushRegistrationSeconds
+    ) {
         final Intent intent = new Intent();
 
         intent.setAction(getAction(BroadcastAction.REGISTRATION));
         intent.putExtra(PARAM_ACCOUNT_ID, accountID);
         intent.putExtra(PARAM_REGISTRATION_CODE, registrationStateCode);
+        intent.putExtra(PARAM_PUSH_CAPABILITY_CHECKED, pushCapabilityChecked);
+        intent.putExtra(PARAM_PUSH_SUPPORTED, pushSupported);
+        intent.putExtra(PARAM_PUSH_PROVIDER, pushProvider);
+        intent.putExtra(PARAM_PUSH_REGISTRATION_SECONDS, pushRegistrationSeconds);
 
         sendBroadcast(intent);
     }
